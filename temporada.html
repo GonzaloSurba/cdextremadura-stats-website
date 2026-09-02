@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CD Extremadura — Temporada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --negro:   #0d0d0d;
+    --verde:   #1b4332;
+    --verde2:  #2d6a4f;
+    --acento:  #d4a017;
+    --blanco:  #f7f3eb;
+    --gris1:   #1e1e1e;
+    --gris2:   #2a2a2a;
+    --gris3:   #3a3a3a;
+    --texto:   #e8e0d0;
+    --texto2:  #9a9080;
+    --borde:   rgba(255,255,255,0.07);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--negro);
+    color: var(--texto);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── Grain overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--verde);
+    border-bottom: 3px solid var(--acento);
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 150%, rgba(212,160,23,0.15) 0%, transparent 70%);
+  }
+  .header-club {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    letter-spacing: 0.06em;
+    color: var(--blanco);
+    line-height: 1;
+    position: relative;
+  }
+  .header-club span { color: var(--acento); }
+  .header-sub {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: rgba(247,243,235,0.55);
+    margin-top: 0.35rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    position: relative;
+  }
+  .header-comp {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 4px 16px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(212,160,23,0.4);
+    border-radius: 2px;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--acento);
+    font-family: 'Bebas Neue', sans-serif;
+    position: relative;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2.5rem;
+    align-items: start;
+  }
+  @media (max-width: 800px) {
+    .container { grid-template-columns: 1fr; }
+  }
+
+  /* ── Sección título ── */
+  .seccion-titulo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.1em;
+    color: var(--acento);
+    border-bottom: 1px solid var(--borde);
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .seccion-titulo::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 1.4rem;
+    background: var(--acento);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── Tabla clasificación ── */
+  .tabla-wrap {
+    background: var(--gris1);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .tabla thead th {
+    background: var(--gris2);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    color: var(--texto2);
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--borde);
+  }
+  .tabla thead th:first-child { text-align: left; padding-left: 14px; }
+  .tabla tbody tr {
+    border-bottom: 1px solid var(--borde);
+    transition: background 0.15s;
+  }
+  .tabla tbody tr:last-child { border-bottom: none; }
+  .tabla tbody tr:hover { background: rgba(255,255,255,0.03); }
+  .tabla tbody tr.mi-equipo { background: rgba(27,67,50,0.5); }
+  .tabla tbody tr.mi-equipo:hover { background: rgba(27,67,50,0.7); }
+  .tabla td {
+    padding: 9px 8px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--texto2);
+  }
+  .tabla td:first-child {
+    text-align: left;
+    padding-left: 14px;
+    color: var(--texto);
+  }
+  .pos-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: var(--texto2);
+    min-width: 24px;
+    display: inline-block;
+    text-align: right;
+    margin-right: 6px;
+  }
+  .pos-num.oro   { color: #ffd700; }
+  .pos-num.plata { color: #c0c0c0; }
+  .pos-num.bronce{ color: #cd7f32; }
+  .pts-col {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    color: var(--texto) !important;
+  }
+  .equipo-nombre { font-weight: 600; }
+  .equipo-nombre.principal { color: var(--acento); }
+
+  /* ── Lista partidos ── */
+  .jornada-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.15em;
+    color: var(--texto2);
+    padding: 1.5rem 0 0.5rem;
+    text-transform: uppercase;
+  }
+  .jornada-label:first-child { padding-top: 0; }
+
+  .partido-card {
+    background: var(--gris1);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    padding: 0;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .partido-card:hover { border-color: rgba(255,255,255,0.14); }
+  .partido-card.destacado { border-left: 3px solid var(--acento); }
+
+  .partido-inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0;
+    padding: 12px 16px;
+  }
+  .equipo-local  { text-align: right; }
+  .equipo-visit  { text-align: left; }
+  .eq-nombre {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--texto);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .eq-nombre.es-principal { color: var(--acento); }
+  .eq-meta {
+    font-size: 0.75rem;
+    color: var(--texto2);
+    margin-top: 1px;
+    font-style: italic;
+  }
+
+  .resultado-centro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .marcador {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    color: var(--blanco);
+  }
+  .marcador.victoria { color: var(--acento); }
+  .marcador.derrota  { color: #8b3a3a; }
+  .marcador.empate   { color: var(--texto2); }
+  .partido-fecha-mini {
+    font-size: 0.7rem;
+    color: var(--texto2);
+    letter-spacing: 0.08em;
+    font-family: 'Bebas Neue', sans-serif;
+    margin-top: 2px;
+  }
+  .estado-pill {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.06em;
+    margin-top: 3px;
+  }
+  .pill-programado { background: rgba(41,128,185,0.2); color: #5dade2; }
+  .pill-aplazado   { background: rgba(243,156,18,0.2); color: #f39c12; }
+  .pill-jugado     { display: none; }
+
+  /* ── Error/Loading ── */
+  .msg {
+    text-align: center;
+    padding: 3rem;
+    color: var(--texto2);
+    font-style: italic;
+    font-size: 0.95rem;
+  }
+  .msg.error { color: #c0392b; }
+
+  /* ── Config bar ── */
+  .config-bar {
+    background: var(--gris2);
+    border-bottom: 1px solid var(--borde);
+    padding: 8px 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: var(--texto2);
+    font-family: monospace;
+  }
+  .config-bar input {
+    background: var(--gris3);
+    border: 1px solid var(--borde);
+    border-radius: 4px;
+    color: var(--texto);
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-family: monospace;
+    width: 260px;
+  }
+  .config-bar button {
+    background: var(--verde);
+    border: none;
+    color: var(--blanco);
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: monospace;
+  }
+  .config-bar button:hover { background: var(--verde2); }
+  .dot-status {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--texto2);
+    flex-shrink: 0;
+  }
+  .dot-status.ok    { background: #2ecc71; }
+  .dot-status.error { background: #e74c3c; }
+
+  /* ── Animaciones ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeUp 0.4s ease both; }
+  .partido-card:nth-child(1)  { animation-delay: 0.03s; }
+  .partido-card:nth-child(2)  { animation-delay: 0.06s; }
+  .partido-card:nth-child(3)  { animation-delay: 0.09s; }
+  .partido-card:nth-child(4)  { animation-delay: 0.12s; }
+  .partido-card:nth-child(5)  { animation-delay: 0.15s; }
+  .tabla tbody tr:nth-child(1) { animation: fadeUp 0.4s 0.05s both; }
+  .tabla tbody tr:nth-child(2) { animation: fadeUp 0.4s 0.10s both; }
+  .tabla tbody tr:nth-child(3) { animation: fadeUp 0.4s 0.15s both; }
+  .tabla tbody tr:nth-child(4) { animation: fadeUp 0.4s 0.20s both; }
+  .tabla tbody tr:nth-child(5) { animation: fadeUp 0.4s 0.25s both; }
+  .tabla tbody tr:nth-child(6) { animation: fadeUp 0.4s 0.30s both; }
+
+  /* ── Pie ── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.75rem;
+    color: var(--texto2);
+    border-top: 1px solid var(--borde);
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="config-bar">
+  <span class="dot-status" id="dot"></span>
+  <span>API:</span>
+  <input type="text" id="api-input" value="http://localhost:8000/api/v1">
+  <button onclick="cargar()">Cargar</button>
+  <span id="api-msg" style="margin-left:4px"></span>
+</div>
+
+<header class="header">
+  <div class="header-club"><span>CD</span> EXTREMADURA</div>
+  <div class="header-sub">Club Deportivo Extremadura</div>
+  <div id="comp-label" class="header-comp">Cargando...</div>
+</header>
+
+<div class="container">
+  <!-- Partidos -->
+  <section>
+    <div class="seccion-titulo">Partidos</div>
+    <div id="partidos-wrap"><div class="msg">Cargando partidos...</div></div>
+  </section>
+
+  <!-- Clasificación -->
+  <aside>
+    <div class="seccion-titulo">Clasificación</div>
+    <div class="tabla-wrap">
+      <table class="tabla" id="tabla-clasificacion">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding-left:14px">Equipo</th>
+            <th title="Partidos jugados">PJ</th>
+            <th title="Victorias">V</th>
+            <th title="Empates">E</th>
+            <th title="Derrotas">D</th>
+            <th title="Diferencia de goles">DG</th>
+            <th title="Puntos">PTS</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="7" class="msg">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </aside>
+</div>
+
+<footer>Datos obtenidos en tiempo real desde la API · CD Extremadura</footer>
+
+<script>
+const CT_ID = 1  // competicion_temporada a mostrar
+let API = 'http://localhost:8000/api/v1'
+let MI_EQUIPO_ID = null  // se detecta automáticamente
+
+// ── Fetch helper ─────────────────────────────────────────────
+async function get(path) {
+  const r = await fetch(`${API}${path}`)
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
+  return r.json()
+}
+
+// ── Entrada principal ─────────────────────────────────────────
+async function cargar() {
+  API = document.getElementById('api-input').value.replace(/\/$/, '')
+  const dot = document.getElementById('dot')
+  const msg = document.getElementById('api-msg')
+  dot.className = 'dot-status'
+  msg.textContent = 'Conectando...'
+
+  try {
+    // Cargamos en paralelo partidos, clasificación y datos de la competición
+    const [partidos, clasificacion, equipos] = await Promise.all([
+      get(`/partidos?competicion_temporada_id=${CT_ID}&limit=500`),
+      get(`/estadisticas/clasificacion?competicion_temporada_id=${CT_ID}`),
+      get('/equipos'),
+    ])
+
+    dot.className = 'dot-status ok'
+    msg.textContent = ''
+
+    // Detectar equipo principal
+    const principal = equipos.find(e => e.equipo_principal)
+    if (principal) MI_EQUIPO_ID = principal.id
+
+    // Nombre de la competición
+    try {
+      const ct = await get(`/competiciones/temporadas`)
+      const comp = ct.find(c => c.id === CT_ID)
+      if (comp) document.getElementById('comp-label').textContent = comp.nombre
+    } catch {}
+
+    renderClasificacion(clasificacion)
+    renderPartidos(partidos, equipos)
+
+  } catch (e) {
+    dot.className = 'dot-status error'
+    msg.textContent = e.message
+    document.getElementById('partidos-wrap').innerHTML = `<div class="msg error">Error: ${e.message}</div>`
+    document.getElementById('tabla-body').innerHTML = `<tr><td colspan="7" class="msg error">${e.message}</td></tr>`
+  }
+}
+
+// ── Render clasificación ──────────────────────────────────────
+function renderClasificacion(rows) {
+  const tbody = document.getElementById('tabla-body')
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="msg">Sin datos</td></tr>'
+    return
+  }
+
+  const posClases = ['oro', 'plata', 'bronce']
+
+  tbody.innerHTML = rows.map((eq, i) => {
+    const esPrincipal = eq.equipo_id === MI_EQUIPO_ID
+    const posClass = posClases[i] ?? ''
+    const dg = eq.dg > 0 ? `+${eq.dg}` : eq.dg
+
+    return `
+      <tr class="${esPrincipal ? 'mi-equipo' : ''}">
+        <td>
+          <span class="pos-num ${posClass}">${i + 1}</span>
+          <span class="equipo-nombre ${esPrincipal ? 'principal' : ''}">${eq.equipo_nombre}</span>
+        </td>
+        <td>${eq.pj}</td>
+        <td>${eq.pg}</td>
+        <td>${eq.pe}</td>
+        <td>${eq.pp}</td>
+        <td style="font-size:0.82rem">${dg}</td>
+        <td class="pts-col">${eq.pts}</td>
+      </tr>`
+  }).join('')
+}
+
+// ── Render partidos ───────────────────────────────────────────
+function renderPartidos(partidos, equipos) {
+  const wrap = document.getElementById('partidos-wrap')
+  if (!partidos.length) {
+    wrap.innerHTML = '<div class="msg">No hay partidos registrados.</div>'
+    return
+  }
+
+  // Crear mapa de equipos para acceso rápido
+  const eqMap = {}
+  equipos.forEach(e => eqMap[e.id] = e)
+
+  // Agrupar por jornada
+  const jornadas = {}
+  partidos.forEach(p => {
+    const key = p.jornada ?? 'Sin jornada'
+    if (!jornadas[key]) jornadas[key] = []
+    jornadas[key].push(p)
+  })
+
+  const keys = Object.keys(jornadas).sort((a, b) => {
+    if (a === 'Sin jornada') return 1
+    if (b === 'Sin jornada') return -1
+    return parseInt(a) - parseInt(b)
+  })
+
+  let html = ''
+  for (const key of keys) {
+    html += `<div class="jornada-label">Jornada ${key}</div>`
+    for (const p of jornadas[key]) {
+      html += renderPartido(p, eqMap)
+    }
+  }
+  wrap.innerHTML = html
+}
+
+function renderPartido(p, eqMap) {
+  const localId  = p.equipo_local
+  const visitId  = p.equipo_visitante
+  const localNom  = p.equipo_local_nombre  ?? eqMap[localId]?.nombre  ?? `Equipo ${localId}`
+  const visitNom  = p.equipo_visitante_nombre ?? eqMap[visitId]?.nombre ?? `Equipo ${visitId}`
+  const localShort  = eqMap[localId]?.nombre_corto  ?? localNom
+  const visitShort  = eqMap[visitId]?.nombre_corto  ?? visitNom
+
+  const esLocalPrincipal = localId === MI_EQUIPO_ID
+  const esVisitPrincipal = visitId === MI_EQUIPO_ID
+  const destacado = esLocalPrincipal || esVisitPrincipal
+
+  // Resultado y color desde el punto de vista del equipo principal
+  let clasesMarcador = ''
+  let marcadorHtml = '– –'
+
+  if (p.estado === 'jugado') {
+    const gl = p.goles_local
+    const gv = p.goles_visitante
+    marcadorHtml = `${gl} – ${gv}`
+
+    if (MI_EQUIPO_ID) {
+      let ganamos = false, perdemos = false
+      if (esLocalPrincipal)  { ganamos = gl > gv; perdemos = gl < gv }
+      if (esVisitPrincipal)  { ganamos = gv > gl; perdemos = gv < gl }
+      if (ganamos)           clasesMarcador = 'victoria'
+      else if (perdemos)     clasesMarcador = 'derrota'
+      else                   clasesMarcador = 'empate'
+    }
+  }
+
+  const fecha = p.fecha
+    ? new Date(p.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: '2-digit' })
+    : ''
+
+  const penaltis = p.penaltis_local != null && p.penaltis_visitantes != null
+    ? `<div style="font-size:0.68rem; color:var(--texto2); font-style:italic; margin-top:2px; text-align:center">
+        (${p.penaltis_local} – ${p.penaltis_visitantes} pen.)
+       </div>`
+    : ''
+
+  return `
+    <div class="partido-card ${destacado ? 'destacado' : ''} fade-in">
+      <div class="partido-inner">
+        <div class="equipo-local">
+          <div class="eq-nombre ${esLocalPrincipal ? 'es-principal' : ''}">${localShort}</div>
+        </div>
+        <div class="resultado-centro">
+          <div class="marcador ${clasesMarcador}">${marcadorHtml}</div>
+          ${penaltis}
+          <div class="partido-fecha-mini">${fecha}</div>
+          <div class="estado-pill pill-${p.estado}">${p.estado}</div>
+        </div>
+        <div class="equipo-visit">
+          <div class="eq-nombre ${esVisitPrincipal ? 'es-principal' : ''}">${visitShort}</div>
+        </div>
+      </div>
+    </div>`
+}
+
+// ── Init ──────────────────────────────────────────────────────
+cargar()
+</script>
+</body>
+</html>

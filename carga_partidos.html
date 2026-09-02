@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CD Extremadura — Carga de partidos</title>
+<style>
+  :root {
+    --verde: #1a3a2a;
+    --verde-medio: #2d5c42;
+    --verde-claro: #3d7a58;
+    --acento: #e8c84a;
+    --acento-hover: #f0d870;
+    --fondo: #f5f3ee;
+    --fondo-card: #ffffff;
+    --texto: #1a1a1a;
+    --texto-suave: #5a5a5a;
+    --borde: #ddd8ce;
+    --rojo: #c0392b;
+    --amarillo-badge: #f39c12;
+    --verde-badge: #27ae60;
+    --azul-badge: #2980b9;
+    --sombra: 0 2px 12px rgba(0,0,0,0.08);
+    --radio: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--fondo);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--verde);
+    color: white;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header h1 { font-size: 16px; font-weight: normal; letter-spacing: 0.08em; text-transform: uppercase; }
+  header span { font-size: 12px; color: rgba(255,255,255,0.5); font-family: monospace; }
+
+  /* ── Layout ── */
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: calc(100vh - 56px); }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--verde);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4);
+    padding: 1rem 0.75rem 0.5rem;
+    font-family: monospace;
+  }
+  .sidebar-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.75);
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Georgia', serif;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+  .sidebar-btn.active { background: var(--acento); color: var(--verde); font-weight: bold; }
+  .sidebar-btn .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.5; flex-shrink: 0; }
+
+  /* ── Main ── */
+  .main { padding: 2rem; overflow-y: auto; }
+
+  /* ── Sección ── */
+  .seccion { display: none; }
+  .seccion.activa { display: block; }
+  .seccion-titulo {
+    font-size: 22px;
+    font-weight: normal;
+    margin-bottom: 0.25rem;
+    color: var(--verde);
+    letter-spacing: -0.02em;
+  }
+  .seccion-desc { font-size: 13px; color: var(--texto-suave); margin-bottom: 2rem; font-family: monospace; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--fondo-card);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--sombra);
+  }
+  .card-titulo {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--texto-suave);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--borde);
+    font-family: monospace;
+  }
+
+  /* ── Grid de campos ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .col-full { grid-column: 1 / -1; }
+
+  /* ── Campos ── */
+  .campo { display: flex; flex-direction: column; gap: 5px; }
+  .campo label { font-size: 12px; color: var(--texto-suave); font-family: monospace; }
+  .campo input, .campo select {
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: 'Georgia', serif;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .campo input:focus, .campo select:focus {
+    outline: none;
+    border-color: var(--verde-claro);
+    background: white;
+  }
+
+  /* ── Score ── */
+  .score-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .score-equipo {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    color: var(--texto-suave);
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .score-input {
+    width: 80px !important;
+    font-size: 32px !important;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px !important;
+    color: var(--verde) !important;
+  }
+  .score-sep { font-size: 28px; color: var(--borde); flex-shrink: 0; }
+
+  /* ── Alineación ── */
+  .alineacion-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .jugador-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--fondo);
+    border-radius: 6px;
+    border: 1px solid var(--borde);
+    font-size: 13px;
+  }
+  .jugador-row select { flex: 1; border: none; background: transparent; font-family: 'Georgia', serif; font-size: 13px; color: var(--texto); }
+  .jugador-row select:focus { outline: none; }
+  .badge-titular {
+    font-size: 10px;
+    background: var(--verde);
+    color: white;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-family: monospace;
+    flex-shrink: 0;
+  }
+  .badge-suplente {
+    font-size: 10px;
+    background: var(--borde);
+    color: var(--texto-suave);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-family: monospace;
+    flex-shrink: 0;
+  }
+  .num-dorsal {
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--verde-claro);
+    min-width: 24px;
+    text-align: right;
+  }
+  .min-campo {
+    width: 60px;
+    border: 1px solid var(--borde) !important;
+    background: white !important;
+    border-radius: 4px !important;
+    text-align: center;
+    font-size: 12px !important;
+    padding: 4px !important;
+  }
+
+  /* ── Eventos ── */
+  .evento-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--borde);
+    background: var(--fondo);
+    margin-bottom: 6px;
+  }
+  .evento-row input, .evento-row select {
+    border: 1px solid var(--borde);
+    background: white;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-size: 12px;
+    font-family: 'Georgia', serif;
+    color: var(--texto);
+  }
+  .evento-row input:focus, .evento-row select:focus { outline: none; border-color: var(--verde-claro); }
+  .input-min { width: 58px; text-align: center; }
+  .select-jugador { flex: 1; min-width: 0; }
+  .select-tipo { width: 130px; }
+
+  /* ── Botones ── */
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-add {
+    background: none;
+    border: 1px dashed var(--borde);
+    color: var(--texto-suave);
+    width: 100%;
+    justify-content: center;
+    margin-top: 6px;
+  }
+  .btn-add:hover { border-color: var(--verde-claro); color: var(--verde); background: rgba(61,122,88,0.04); }
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--borde);
+    padding: 4px 6px;
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .btn-del:hover { color: var(--rojo); }
+  .btn-primary {
+    background: var(--verde);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+  .btn-primary:hover { background: var(--verde-medio); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary {
+    background: none;
+    border: 1px solid var(--borde);
+    color: var(--texto);
+  }
+  .btn-secondary:hover { background: var(--fondo); }
+
+  /* ── Acciones finales ── */
+  .acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--borde);
+  }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: monospace;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 999;
+    max-width: 360px;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.ok { background: var(--verde); color: white; }
+  #toast.error { background: var(--rojo); color: white; }
+
+  /* ── Config panel ── */
+  .config-row { display: flex; gap: 10px; align-items: flex-end; }
+  .config-row .campo { flex: 1; }
+
+  /* ── Lista partidos ── */
+  .partido-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--fondo-card);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .partido-fecha { font-family: monospace; font-size: 11px; color: var(--texto-suave); min-width: 80px; }
+  .partido-teams { flex: 1; font-weight: bold; }
+  .partido-score { font-family: monospace; font-size: 14px; min-width: 50px; text-align: center; color: var(--verde); }
+  .estado-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: monospace;
+    flex-shrink: 0;
+  }
+  .estado-jugado { background: #d4edda; color: #155724; }
+  .estado-programado { background: #cce5ff; color: #004085; }
+  .estado-aplazado { background: #fff3cd; color: #856404; }
+
+  hr.sep { border: none; border-top: 1px solid var(--borde); margin: 1.5rem 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚽ CD Extremadura — Gestión de partidos</h1>
+  <span id="api-url-display">localhost:8000</span>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Navegación</div>
+    <button class="sidebar-btn active" onclick="mostrarSeccion('config')">
+      <span class="dot"></span> Configuración
+    </button>
+    <button class="sidebar-btn" onclick="mostrarSeccion('nuevo')">
+      <span class="dot"></span> Nuevo partido
+    </button>
+    <button class="sidebar-btn" onclick="mostrarSeccion('lista')">
+      <span class="dot"></span> Partidos guardados
+    </button>
+
+    <div class="sidebar-label" style="margin-top:1rem">Estado API</div>
+    <div id="api-status" style="padding: 0.5rem 0.75rem; font-size:12px; font-family:monospace; color:rgba(255,255,255,0.4);">
+      — Sin comprobar
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ══ CONFIGURACIÓN ══ -->
+    <div id="sec-config" class="seccion activa">
+      <h2 class="seccion-titulo">Configuración</h2>
+      <p class="seccion-desc">Configura la conexión con tu API FastAPI antes de empezar.</p>
+
+      <div class="card">
+        <div class="card-titulo">Conexión a la API</div>
+        <div class="config-row">
+          <div class="campo">
+            <label>URL base de la API</label>
+            <input type="text" id="api-url" value="http://localhost:8000/api/v1" placeholder="http://localhost:8000/api/v1">
+          </div>
+          <button class="btn btn-secondary" onclick="comprobarAPI()">Comprobar conexión</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-titulo">Autenticación JWT</div>
+        <div class="grid-2">
+          <div class="campo">
+            <label>Usuario admin</label>
+            <input type="text" id="auth-user" value="admin">
+          </div>
+          <div class="campo">
+            <label>Contraseña</label>
+            <input type="password" id="auth-pass" placeholder="••••••••">
+          </div>
+        </div>
+        <div style="margin-top:1rem">
+          <button class="btn btn-primary" onclick="login()">Iniciar sesión y obtener token</button>
+        </div>
+        <div id="token-status" style="margin-top:0.75rem; font-size:12px; font-family:monospace; color:var(--texto-suave)">— Sin token</div>
+      </div>
+
+      <div class="card">
+        <div class="card-titulo">Cargar datos maestros</div>
+        <p style="font-size:13px; color:var(--texto-suave); margin-bottom:1rem">
+          Carga los jugadores, equipos y competiciones desde la API para usarlos en el formulario.
+        </p>
+        <button class="btn btn-secondary" onclick="cargarDatosMaestros()">Cargar jugadores, equipos y competiciones</button>
+        <div id="maestros-status" style="margin-top:0.75rem; font-size:12px; font-family:monospace; color:var(--texto-suave)">— Sin cargar</div>
+      </div>
+    </div>
+
+    <!-- ══ NUEVO PARTIDO ══ -->
+    <div id="sec-nuevo" class="seccion">
+      <h2 class="seccion-titulo">Nuevo partido</h2>
+      <p class="seccion-desc">Completa todos los datos del partido, alineación, goles y tarjetas.</p>
+
+      <!-- Info partido -->
+      <div class="card">
+        <div class="card-titulo">Información del partido</div>
+        <div class="grid-2">
+          <div class="campo">
+            <label>Competición / Temporada</label>
+            <select id="p-competicion"></select>
+          </div>
+          <div class="campo">
+            <label>Jornada</label>
+            <input type="number" id="p-jornada" min="1" placeholder="Ej: 12">
+          </div>
+          <div class="campo">
+            <label>Equipo local</label>
+            <select id="p-local" onchange="actualizarNombres()"></select>
+          </div>
+          <div class="campo">
+            <label>Equipo visitante</label>
+            <select id="p-visitante" onchange="actualizarNombres()"></select>
+          </div>
+          <div class="campo">
+            <label>Fecha y hora</label>
+            <input type="datetime-local" id="p-fecha">
+          </div>
+          <div class="campo">
+            <label>Estadio (opcional)</label>
+            <input type="text" id="p-estadio" placeholder="Si es diferente al habitual">
+          </div>
+          <div class="campo">
+            <label>Estado</label>
+            <select id="p-estado" onchange="toggleResultado()">
+              <option value="jugado">Jugado</option>
+              <option value="programado">Programado</option>
+              <option value="aplazado">Aplazado</option>
+              <option value="suspendido">Suspendido</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultado -->
+      <div class="card" id="card-resultado">
+        <div class="card-titulo">Resultado</div>
+        <div class="score-wrap">
+          <div class="score-equipo" id="nombre-local">Local</div>
+          <input type="number" class="score-input campo" id="p-goles-local" value="0" min="0" style="width:80px">
+          <div class="score-sep">–</div>
+          <input type="number" class="score-input campo" id="p-goles-visitante" value="0" min="0" style="width:80px">
+          <div class="score-equipo" id="nombre-visitante">Visitante</div>
+        </div>
+        <div class="grid-2" style="margin-top:0.75rem">
+          <div class="campo">
+            <label>Penaltis local (si los hubo)</label>
+            <input type="number" id="p-pen-local" min="0" placeholder="—">
+          </div>
+          <div class="campo">
+            <label>Penaltis visitante</label>
+            <input type="number" id="p-pen-visitante" min="0" placeholder="—">
+          </div>
+        </div>
+      </div>
+
+      <!-- Alineación -->
+      <div class="card" id="card-alineacion">
+        <div class="card-titulo">Alineación (11 titulares + suplentes)</div>
+
+        <div style="font-size:12px; font-family:monospace; color:var(--texto-suave); margin-bottom:1rem">
+          Titulares — dorsal · jugador
+        </div>
+        <div class="alineacion-wrap" id="titulares-list"></div>
+        <button class="btn btn-add" onclick="addTitular()">+ Añadir titular</button>
+
+        <hr class="sep">
+
+        <div style="font-size:12px; font-family:monospace; color:var(--texto-suave); margin-bottom:1rem">
+          Suplentes — jugador · minuto entrada · minuto salida (del titular)
+        </div>
+        <div class="alineacion-wrap" id="suplentes-list"></div>
+        <button class="btn btn-add" onclick="addSuplente()">+ Añadir suplente</button>
+      </div>
+
+      <!-- Goles -->
+      <div class="card">
+        <div class="card-titulo">Goles</div>
+        <div id="goles-list"></div>
+        <button class="btn btn-add" onclick="addGol()">+ Añadir gol</button>
+      </div>
+
+      <!-- Tarjetas -->
+      <div class="card">
+        <div class="card-titulo">Tarjetas</div>
+        <div id="tarjetas-list"></div>
+        <button class="btn btn-add" onclick="addTarjeta()">+ Añadir tarjeta</button>
+      </div>
+
+      <div class="acciones">
+        <button class="btn btn-secondary" onclick="resetForm()">Limpiar</button>
+        <button class="btn btn-primary" id="btn-guardar" onclick="guardarPartido()">Guardar partido completo</button>
+      </div>
+    </div>
+
+    <!-- ══ LISTA ══ -->
+    <div id="sec-lista" class="seccion">
+      <h2 class="seccion-titulo">Partidos guardados</h2>
+      <p class="seccion-desc">Partidos ya registrados en la base de datos.</p>
+      <button class="btn btn-secondary" style="margin-bottom:1rem" onclick="cargarPartidos()">↻ Recargar</button>
+      <div id="partidos-lista"></div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  Estado global
+// ══════════════════════════════════════════════════════════════
+let API = 'http://localhost:8000/api/v1'
+let TOKEN = null
+let JUGADORES = []
+let EQUIPOS = []
+let COMPETICIONES = []
+
+// ══════════════════════════════════════════════════════════════
+//  Utils
+// ══════════════════════════════════════════════════════════════
+function toast(msg, tipo = 'ok') {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.className = `show ${tipo}`
+  clearTimeout(el._t)
+  el._t = setTimeout(() => el.className = '', 3500)
+}
+
+function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' }
+  if (TOKEN) headers['Authorization'] = `Bearer ${TOKEN}`
+  return fetch(`${API}${path}`, { ...opts, headers })
+}
+
+function mostrarSeccion(id) {
+  document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'))
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'))
+  document.getElementById(`sec-${id}`).classList.add('activa')
+  event.currentTarget.classList.add('active')
+  if (id === 'lista') cargarPartidos()
+}
+
+function opcionesJugadores() {
+  return JUGADORES.map(j =>
+    `<option value="${j.id}">${j.dorsal ? j.dorsal + ' · ' : ''}${j.apellidos}, ${j.nombre}</option>`
+  ).join('')
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Config & Auth
+// ══════════════════════════════════════════════════════════════
+async function comprobarAPI() {
+  API = document.getElementById('api-url').value.replace(/\/$/, '')
+  document.getElementById('api-url-display').textContent = API.replace('http://', '').replace('https://', '')
+  try {
+    const r = await fetch(`${API}/equipos`)
+    if (r.ok) {
+      document.getElementById('api-status').textContent = '✓ Conectada'
+      document.getElementById('api-status').style.color = '#6fcf97'
+      toast('API accesible correctamente')
+    } else {
+      throw new Error(r.status)
+    }
+  } catch (e) {
+    document.getElementById('api-status').textContent = '✗ Sin conexión'
+    document.getElementById('api-status').style.color = '#eb5757'
+    toast('No se pudo conectar con la API: ' + e.message, 'error')
+  }
+}
+
+async function login() {
+  API = document.getElementById('api-url').value.replace(/\/$/, '')
+  const user = document.getElementById('auth-user').value
+  const pass = document.getElementById('auth-pass').value
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    })
+    if (!r.ok) throw new Error('Credenciales incorrectas')
+    const data = await r.json()
+    TOKEN = data.access_token
+    document.getElementById('token-status').textContent = '✓ Token obtenido — expira en 60 min'
+    document.getElementById('token-status').style.color = '#27ae60'
+    toast('Sesión iniciada correctamente')
+  } catch (e) {
+    document.getElementById('token-status').textContent = '✗ ' + e.message
+    document.getElementById('token-status').style.color = '#c0392b'
+    toast(e.message, 'error')
+  }
+}
+
+async function cargarDatosMaestros() {
+  try {
+    const [jRes, eRes, cRes] = await Promise.all([
+      api('/jugadores?limit=500'),
+      api('/equipos'),
+      api('/competiciones/temporadas'),
+    ])
+    if (!jRes.ok || !eRes.ok || !cRes.ok) throw new Error('Error al cargar datos')
+    JUGADORES    = await jRes.json()
+    EQUIPOS      = await eRes.json()
+    COMPETICIONES = await cRes.json()
+
+    // Poblar selects del formulario
+    const selLocal  = document.getElementById('p-local')
+    const selVisit  = document.getElementById('p-visitante')
+    const selComp   = document.getElementById('p-competicion')
+
+    const eqOpts = EQUIPOS.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('')
+    selLocal.innerHTML  = eqOpts
+    selVisit.innerHTML  = eqOpts
+    selComp.innerHTML   = COMPETICIONES.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')
+
+    actualizarNombres()
+    document.getElementById('maestros-status').textContent =
+      `✓ ${JUGADORES.length} jugadores · ${EQUIPOS.length} equipos · ${COMPETICIONES.length} competiciones`
+    document.getElementById('maestros-status').style.color = '#27ae60'
+    toast('Datos maestros cargados')
+  } catch (e) {
+    toast('Error cargando datos: ' + e.message, 'error')
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Formulario — helpers
+// ══════════════════════════════════════════════════════════════
+function actualizarNombres() {
+  const local  = document.getElementById('p-local')
+  const visit  = document.getElementById('p-visitante')
+  document.getElementById('nombre-local').textContent  = local.options[local.selectedIndex]?.text ?? 'Local'
+  document.getElementById('nombre-visitante').textContent = visit.options[visit.selectedIndex]?.text ?? 'Visitante'
+}
+
+function toggleResultado() {
+  const estado = document.getElementById('p-estado').value
+  const visible = estado === 'jugado'
+  document.getElementById('card-resultado').style.display    = visible ? '' : 'none'
+  document.getElementById('card-alineacion').style.display   = visible ? '' : 'none'
+}
+
+function crearBtnDel(fn) {
+  const btn = document.createElement('button')
+  btn.className = 'btn btn-del'
+  btn.textContent = '×'
+  btn.onclick = fn
+  return btn
+}
+
+// ── Titulares ──
+function addTitular() {
+  const wrap = document.getElementById('titulares-list')
+  const row = document.createElement('div')
+  row.className = 'jugador-row'
+  row.innerHTML = `
+    <span class="badge-titular">Titular</span>
+    <select class="titular-sel" style="flex:1; border:none; background:transparent; font-family:Georgia,serif; font-size:13px; color:var(--texto);">
+      <option value="">— Seleccionar jugador —</option>
+      ${opcionesJugadores()}
+    </select>
+  `
+  row.appendChild(crearBtnDel(() => row.remove()))
+  wrap.appendChild(row)
+}
+
+// ── Suplentes ──
+function addSuplente() {
+  const wrap = document.getElementById('suplentes-list')
+  const row = document.createElement('div')
+  row.className = 'jugador-row'
+  row.innerHTML = `
+    <span class="badge-suplente">Suplente</span>
+    <select class="suplente-sel" style="flex:1; border:none; background:transparent; font-family:Georgia,serif; font-size:13px; color:var(--texto);">
+      <option value="">— Jugador que entra —</option>
+      ${opcionesJugadores()}
+    </select>
+    <input type="number" class="min-campo suplente-entrada" min="1" max="120" placeholder="Entra'" title="Minuto de entrada">
+    <span style="font-size:11px; color:var(--texto-suave); flex-shrink:0">↔</span>
+    <select class="sustituido-sel" style="width:180px; border:1px solid var(--borde); border-radius:4px; font-size:12px; padding:4px 6px;">
+      <option value="">— Sustituye a —</option>
+      ${opcionesJugadores()}
+    </select>
+  `
+  row.appendChild(crearBtnDel(() => row.remove()))
+  wrap.appendChild(row)
+}
+
+// ── Goles ──
+function addGol() {
+  const wrap = document.getElementById('goles-list')
+  const row = document.createElement('div')
+  row.className = 'evento-row'
+  row.innerHTML = `
+    <input type="number" class="input-min gol-min" min="1" max="120" placeholder="Min">
+    <select class="select-jugador gol-anotador">
+      <option value="">— Anotador —</option>
+      ${opcionesJugadores()}
+    </select>
+    <select class="select-jugador gol-asistente">
+      <option value="">— Sin asistencia —</option>
+      ${opcionesJugadores()}
+    </select>
+    <select class="select-tipo gol-tipo">
+      <option value="normal">Normal</option>
+      <option value="penalti">Penalti</option>
+      <option value="falta_directa">Falta directa</option>
+      <option value="propia_puerta">Propia puerta</option>
+    </select>
+    <label style="font-size:11px; display:flex; align-items:center; gap:4px; flex-shrink:0; color:var(--texto-suave)">
+      <input type="checkbox" class="gol-afavor" checked> A favor
+    </label>
+  `
+  row.appendChild(crearBtnDel(() => row.remove()))
+  wrap.appendChild(row)
+}
+
+// ── Tarjetas ──
+function addTarjeta() {
+  const wrap = document.getElementById('tarjetas-list')
+  const row = document.createElement('div')
+  row.className = 'evento-row'
+  row.innerHTML = `
+    <input type="number" class="input-min tar-min" min="1" max="120" placeholder="Min">
+    <select class="select-jugador tar-jugador">
+      <option value="">— Jugador —</option>
+      ${opcionesJugadores()}
+    </select>
+    <select class="select-tipo tar-tipo">
+      <option value="amarilla">🟡 Amarilla</option>
+      <option value="doble_amarilla">🟡🟡 Doble amarilla</option>
+      <option value="roja">🔴 Roja directa</option>
+    </select>
+  `
+  row.appendChild(crearBtnDel(() => row.remove()))
+  wrap.appendChild(row)
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Guardar partido
+// ══════════════════════════════════════════════════════════════
+async function guardarPartido() {
+  if (!TOKEN) { toast('Primero inicia sesión en Configuración', 'error'); return }
+
+  const btn = document.getElementById('btn-guardar')
+  btn.disabled = true
+  btn.textContent = 'Guardando...'
+
+  try {
+    // 1. Crear partido
+    const estado = document.getElementById('p-estado').value
+    const payload = {
+      equipo_local:          parseInt(document.getElementById('p-local').value),
+      equipo_visitante:      parseInt(document.getElementById('p-visitante').value),
+      competicion_temporada: parseInt(document.getElementById('p-competicion').value),
+      fecha:                 document.getElementById('p-fecha').value,
+      jornada:               parseInt(document.getElementById('p-jornada').value) || null,
+      estadio:               document.getElementById('p-estadio').value || null,
+      estado,
+      goles_local:      estado === 'jugado' ? parseInt(document.getElementById('p-goles-local').value)     : 0,
+      goles_visitante:  estado === 'jugado' ? parseInt(document.getElementById('p-goles-visitante').value) : 0,
+      penaltis_local:      parseInt(document.getElementById('p-pen-local').value)    || null,
+      penaltis_visitantes: parseInt(document.getElementById('p-pen-visitante').value) || null,
+    }
+
+    const rPartido = await api('/partidos', { method: 'POST', body: JSON.stringify(payload) })
+    if (!rPartido.ok) { const e = await rPartido.json(); throw new Error(e.detail ?? 'Error al crear partido') }
+    const partido = await rPartido.json()
+    const pid = partido.id
+
+    const errores = []
+
+    // 2. Alineaciones — titulares
+    let numGol = 1
+    const titulares = document.querySelectorAll('.titular-sel')
+    for (const sel of titulares) {
+      if (!sel.value) continue
+      const r = await api('/alineaciones', { method: 'POST', body: JSON.stringify({
+        jugador: parseInt(sel.value), partido: pid, titular: true,
+        minuto_entrada: null, minuto_salida: null,
+      })})
+      if (!r.ok) errores.push(`Alineación titular ${sel.value}`)
+    }
+
+    // 3. Alineaciones — suplentes
+    const supFilas = document.querySelectorAll('#suplentes-list .jugador-row')
+    for (const fila of supFilas) {
+      const jugSel  = fila.querySelector('.suplente-sel')
+      const entrada = fila.querySelector('.suplente-entrada')
+      const sustSel = fila.querySelector('.sustituido-sel')
+      if (!jugSel?.value) continue
+
+      // Suplente entra
+     /* await api('/alineaciones', { method: 'POST', body: JSON.stringify({
+        jugador: parseInt(jugSel.value), partido: pid, titular: false,
+        minuto_entrada: parseInt(entrada?.value) || null, minuto_salida: null,
+      })})*/
+      await api('/alineaciones', { method: 'POST', body: JSON.stringify({
+        jugador: parseInt(jugSel.value), partido: pid, titular: false,
+        minuto_entrada: parseInt(entrada?.value) || null, minuto_salida: null,
+      })})
+
+      // Titular sale (actualizar minuto_salida si la API lo soporta)
+      // Si tienes endpoint PATCH /alineaciones/{id} puedes añadirlo aquí
+      // 2. Titular sale (actualizar minuto_salida)
+      const titularId = sustSel?.value
+      const minutoSalida = parseInt(entrada?.value) || null
+      if (titularId) {
+        await api(`/alineaciones/por-jugador?jugador=${titularId}&partido=${pid}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ minuto_salida: minutoSalida })
+        })
+      }
+    }
+
+    // 4. Goles
+    const golesFilas = document.querySelectorAll('#goles-list .evento-row')
+    for (const fila of golesFilas) {
+      const anotador = fila.querySelector('.gol-anotador').value
+      if (!anotador) continue
+      const r = await api('/goles', { method: 'POST', body: JSON.stringify({
+        partido:    pid,
+        anotador:   parseInt(anotador),
+        minuto:     parseInt(fila.querySelector('.gol-min').value) || 0,
+        tipo:       fila.querySelector('.gol-tipo').value,
+        asistente:  parseInt(fila.querySelector('.gol-asistente').value) || null,
+        a_favor:    fila.querySelector('.gol-afavor').checked,
+        numero_gol: numGol++,
+      })})
+      if (!r.ok) errores.push(`Gol min ${fila.querySelector('.gol-min').value}`)
+    }
+
+    // 5. Tarjetas
+    const tarjetasFilas = document.querySelectorAll('#tarjetas-list .evento-row')
+    for (const fila of tarjetasFilas) {
+      const jugador = fila.querySelector('.tar-jugador').value
+      if (!jugador) continue
+      const r = await api('/tarjetas', { method: 'POST', body: JSON.stringify({
+        partido: pid,
+        jugador: parseInt(jugador),
+        minuto:  parseInt(fila.querySelector('.tar-min').value) || 0,
+        tipo:    fila.querySelector('.tar-tipo').value,
+      })})
+      if (!r.ok) errores.push(`Tarjeta min ${fila.querySelector('.tar-min').value}`)
+    }
+
+    if (errores.length) {
+      toast(`Partido creado (ID ${pid}) con ${errores.length} errores en eventos`, 'error')
+    } else {
+      toast(`✓ Partido guardado correctamente (ID ${pid})`)
+      resetForm()
+    }
+
+  } catch (e) {
+    toast('Error: ' + e.message, 'error')
+  } finally {
+    btn.disabled = false
+    btn.textContent = 'Guardar partido completo'
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Reset
+// ══════════════════════════════════════════════════════════════
+function resetForm() {
+  document.getElementById('p-jornada').value = ''
+  document.getElementById('p-estadio').value = ''
+  document.getElementById('p-fecha').value   = ''
+  document.getElementById('p-goles-local').value     = '0'
+  document.getElementById('p-goles-visitante').value = '0'
+  document.getElementById('p-pen-local').value     = ''
+  document.getElementById('p-pen-visitante').value = ''
+  document.getElementById('titulares-list').innerHTML = ''
+  document.getElementById('suplentes-list').innerHTML = ''
+  document.getElementById('goles-list').innerHTML     = ''
+  document.getElementById('tarjetas-list').innerHTML  = ''
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Lista partidos
+// ══════════════════════════════════════════════════════════════
+async function cargarPartidos() {
+  try {
+    const r = await api('/partidos?limit=100')
+    if (!r.ok) throw new Error(r.status)
+    const partidos = await r.json()
+    const wrap = document.getElementById('partidos-lista')
+    if (!partidos.length) { wrap.innerHTML = '<p style="color:var(--texto-suave);font-size:13px">Sin partidos registrados.</p>'; return }
+    wrap.innerHTML = partidos.map(p => `
+      <div class="partido-item">
+        <span class="partido-fecha">${new Date(p.fecha).toLocaleDateString('es-ES', {day:'numeric',month:'short',year:'2-digit'})}</span>
+        <span class="partido-teams">${p.equipo_local_nombre ?? p.equipo_local} vs ${p.equipo_visitante_nombre ?? p.equipo_visitante}</span>
+        <span class="partido-score">${p.estado === 'jugado' ? p.goles_local + ' – ' + p.goles_visitante : '— – —'}</span>
+        <span class="estado-badge estado-${p.estado}">${p.estado}</span>
+      </div>
+    `).join('')
+  } catch (e) {
+    toast('Error cargando partidos: ' + e.message, 'error')
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════════════════════
+toggleResultado()
+</script>
+</body>
+</html>

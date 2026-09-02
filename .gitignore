@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignora cualquier carpeta venv en cualquier subnivel
+**/venv/
+venv/
+
+# Ignora archivos internos de Python, Cron y los .env
+.env
+.env.local
+.env.production
+__pycache__/
+*.pyc
+cron/datos/
+
+# Bloqueo archivos mios
+**/generarHash.py
+generarHash.py
+**/sql/
+sql/
+**/svg/
+svg/
