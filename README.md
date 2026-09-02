@@ -52,6 +52,7 @@ Plataforma web para la visualización y análisis de estadísticas del **Club De
   python3 main.py
   ```
   > Se utiliza pnpm por su gestión más estricta de dependencias, lo que evita algunos problemas producidos por los ataques a npm.
+
   > La base de datos MariaDB no forma parte de este repositorio. Sin embargo, el esquema puede generarse a partir de los modelos de SQLAlchemy incluidos en el backend.
 
 ---
