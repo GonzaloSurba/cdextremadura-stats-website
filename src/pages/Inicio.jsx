@@ -181,8 +181,8 @@ const Home = () => {
                                                         {p.competicion_temporada_rel.competicion_rel.nombre}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center justify-around gap-md">
-                                                    <div className="text-center w-1/3">
+                                                <div className="flex flex-col md:flex-row items-center justify-around gap-md">
+                                                    <div className="text-center w-3/4 md:w-1/3">
                                                         <div className="font-display-xl text-xl uppercase">
                                                             {p.equipo_local_rel.nombre_corto}
                                                         </div>
@@ -194,7 +194,7 @@ const Home = () => {
                                                         {p.penaltis_visitantes !== null && `(${p.penaltis_visitantes}) `}
                                                         {p.goles_visitante}
                                                     </div>
-                                                    <div className="text-center w-1/3">
+                                                    <div className="text-center w-3/4 md:w-1/3">
                                                         <div className="font-display-xl text-xl uppercase">
                                                             {p.equipo_visitante_rel.nombre_corto}
                                                         </div>

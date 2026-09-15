@@ -7,7 +7,6 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import * as React from "react"
 export default function PenaltiError(props) {
     return (
         <svg

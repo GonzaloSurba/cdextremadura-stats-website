@@ -13,7 +13,6 @@
  * attribution – you must give appropriate credit, provide a link to the license, and indicate if changes were made
  * share alike – If you remix, transform, or build upon the material, you can distribute your work under any license.
  */
-import * as React from "react"
 export default function Stadium(props) {
     return (
         <svg

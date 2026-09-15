@@ -38,17 +38,22 @@ export default function Temporada() {
                 const data = await competicionesApi.listTemporadas();
                 setTemporadas(data);
                 if (data.length > 0) {
-                    // Por defecto seleccionamos la más reciente
-                    setTempSeleccionada(data[0].id);
+                    // Por defecto selecciono la liga más reciente
+                    let ligas = data.filter(comp => comp?.competicion_rel?.tipo === "liga");
+                    let liga_mas_reciente = ligas.at(-1) ?? data.at(-1) ?? data[0];
+                    setTempSeleccionada(liga_mas_reciente.id);
+                } else {
+                    throw new Error("No se ha obtenido ninguna temporada");
                 }
             } catch (err) {
                 console.error(err);
                 setError("Se ha producido un error al cargar las temporadas");
+                setLoading(false);
             }
         };
         cargarInicial();
     }, []);
-
+    
     // 2. Cargar partidos cada vez que cambie la temporada seleccionada
     useEffect(() => {
         if (!tempSeleccionada) return;
@@ -66,7 +71,7 @@ export default function Temporada() {
                 setEstadisticas(dataEstadisticas);
             } catch (err) {
                 console.error(err);
-                setError("Se ha producido un error al cargar las temporadas");
+                setError("Se ha producido un error al cargar los partidos");
             } finally {
                 setLoading(false);
             }

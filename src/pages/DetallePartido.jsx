@@ -12,10 +12,11 @@ import { useEffect, useState } from 'react';
 import { equiposApi, partidosApi } from '../services/api';
 import { eventoTipo, formatearFecha } from '../services/utils';
 import Loader from '../components/Loader/Loader';
-import FootballBall from '../components/Icons/FootballBall';
+import EventIcon from '../components/EventIcon';
+import Assist from '../components/Icons/Assist';
 import PenaltiGol from '../components/Icons/PenaltiGol';
 import PenaltiError from '../components/Icons/PenaltiError';
-import Tarjeta from '../components/Tarjeta';
+import Leyenda from '../components/Leyenda';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 
@@ -241,8 +242,11 @@ export default function DetallePartido() {
                                                 const esLocal = ev.lado === 'local';
                                                 const nombre = ev.anotador_rel
                                                     ? nombreJugador(ev.anotador_rel)
-                                                    : ev.jugador;
-                                                const icono = ev.tipo_evento === 'gol' ? <FootballBall width={24} height={24} /> : <Tarjeta tipo={ev.tipo} />;
+                                                    : ev.jugador ?? ev.anotador;
+                                                const asistente = ev.asistente_rel
+                                                    ? nombreJugador(ev.asistente_rel)
+                                                    : null;
+                                                const icono = <EventIcon tipo={ev.tipo} />
 
                                                 return (
                                                     <div key={i} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 relative">
@@ -251,7 +255,10 @@ export default function DetallePartido() {
                                                             <div className="flex items-center gap-2 justify-end bg-surface-variant/20 p-2 rounded-xl">
                                                                 <div className="text-right">
                                                                     <p className="font-bold text-sm leading-tight">{nombre}</p>
-                                                                    <p className="text-xs text-gray-500 uppercase">{eventoTipo(ev.tipo)}</p>
+                                                                    <div className='m-auto flex items-center justify-end gap-1 text-xs text-gray-500 uppercase'>
+                                                                        <span>{asistente || eventoTipo(ev.tipo)}</span>
+                                                                        {asistente && <Assist width={12} height={12} />}
+                                                                    </div>
                                                                 </div>
                                                                 <span className="text-lg">{icono}</span>
                                                             </div>
@@ -280,6 +287,7 @@ export default function DetallePartido() {
                                                 );
                                             })}
                                         </div>
+                                        <Leyenda />
                                         {/* TANDA DE PENALTIS */}
                                         {rondasPenaltis.length > 0 && (
                                             <>

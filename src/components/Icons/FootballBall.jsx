@@ -24,7 +24,6 @@
  * Unless in the single pages of icons indexed on this website indicates differently,
  * simple icons distributed on this website is subject to public domain or open source.
  */
-import * as React from "react"
 export default function FootballBall(props) {
     return (
         <svg

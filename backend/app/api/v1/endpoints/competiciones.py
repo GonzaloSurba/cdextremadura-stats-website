@@ -78,6 +78,7 @@ def list_competicion_temporada(
         )
         .join(Competicion, CompeticionTemporada.competicion == Competicion.id)
         .join(Temporada, CompeticionTemporada.temporada == Temporada.id)
+        .order_by(Temporada.fecha_fin)
         .offset(skip)
         .limit(limit)
         .all()
