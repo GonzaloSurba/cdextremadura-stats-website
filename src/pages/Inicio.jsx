@@ -187,7 +187,7 @@ const Home = () => {
                                                             {p.equipo_local_rel.nombre_corto}
                                                         </div>
                                                     </div>
-                                                    <div className="text-4xl font-display-xl text-secondary px-md">
+                                                    <div className="text-4xl font-display-xl text-secondary px-md text-nowrap">
                                                         {p.goles_local}
                                                         {p.penaltis_local !== null && ` (${p.penaltis_local})`}
                                                         {' - '}

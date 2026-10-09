@@ -30,7 +30,7 @@ export default function App() {
       <a href="#main-content" className="skip-link">Saltar al contenido principal</a>
       <Navbar />
 
-      <main id="main-content" className="p-md">
+      <main id="main-content" className="py-md md:px-md">
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Inicio />} />

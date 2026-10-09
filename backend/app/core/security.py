@@ -16,7 +16,7 @@ Cómo funciona:
 from datetime import datetime, timedelta, UTC
 from typing import Any
 
-from jose import jwt
+import jwt
 import bcrypt
 
 from app.core.config import settings

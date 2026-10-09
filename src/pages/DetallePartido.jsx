@@ -191,7 +191,7 @@ export default function DetallePartido() {
 
                         return (
 
-                            <div className="max-w-5xl mx-auto p-md space-y-lg">
+                            <div className="max-w-5xl mx-auto px-2 md:px-md py-md space-y-lg">
 
                                 {/* SECCIÓN SUPERIOR: EL MARCADOR (Scoreboard) */}
                                 <header className="bg-primary text-white rounded-3xl px-md py-xl md:px-xl shadow-lg text-center">
@@ -249,18 +249,18 @@ export default function DetallePartido() {
                                                 const icono = <EventIcon tipo={ev.tipo} />
 
                                                 return (
-                                                    <div key={i} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 relative">
+                                                    <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 relative">
                                                         {/* Lado local (izquierda) */}
                                                         {esLocal ? (
-                                                            <div className="flex items-center gap-2 justify-end bg-surface-variant/20 p-2 rounded-xl">
-                                                                <div className="text-right">
+                                                            <div className="flex items-center gap-2 justify-end bg-surface-variant/20 p-2 rounded-xl min-w-0">
+                                                                <div className="text-right min-w-0">
                                                                     <p className="font-bold text-sm leading-tight">{nombre}</p>
-                                                                    <div className='m-auto flex items-center justify-end gap-1 text-xs text-gray-500 uppercase'>
+                                                                    <div className='flex items-center justify-end gap-1 text-xs text-gray-500 uppercase min-w-0'>
                                                                         <span>{asistente || eventoTipo(ev.tipo)}</span>
-                                                                        {asistente && <Assist width={12} height={12} />}
+                                                                        {asistente && <Assist width={12} height={12} className="shrink-0" />}
                                                                     </div>
                                                                 </div>
-                                                                <span className="text-lg">{icono}</span>
+                                                                <span className="text-lg shrink-0">{icono}</span>
                                                             </div>
                                                         ) : (
                                                             <div />
@@ -273,11 +273,14 @@ export default function DetallePartido() {
 
                                                         {/* Lado visitante (derecha) */}
                                                         {!esLocal ? (
-                                                            <div className="flex items-center gap-2 bg-surface-variant/20 p-2 rounded-xl">
-                                                                <span className="text-lg">{icono}</span>
-                                                                <div>
+                                                            <div className="flex items-center gap-2 bg-surface-variant/20 p-2 rounded-xl min-w-0">
+                                                                <span className="text-lg shrink-0">{icono}</span>
+                                                                <div className='min-w-0'>
                                                                     <p className="font-bold text-sm leading-tight">{nombre}</p>
-                                                                    <p className="text-xs text-gray-500 uppercase">{eventoTipo(ev.tipo)}</p>
+                                                                    <div className='flex items-center justify-start gap-1 text-xs text-gray-500 uppercase min-w-0'>
+                                                                        {asistente && <Assist width={12} height={12} className="shrink-0" />}
+                                                                        <span>{asistente || eventoTipo(ev.tipo)}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         ) : (
