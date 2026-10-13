@@ -255,7 +255,7 @@ export default function DetallePartido() {
                                                             <div className="flex items-center gap-2 justify-end bg-surface-variant/20 p-2 rounded-xl min-w-0">
                                                                 <div className="text-right min-w-0">
                                                                     <p className="font-bold text-sm leading-tight">{nombre}</p>
-                                                                    <div className='flex items-center justify-end gap-1 text-xs text-gray-500 uppercase min-w-0'>
+                                                                    <div className={`flex items-center justify-end gap-1 text-xs text-gray-500 ${!asistente ? 'uppercase' : ''} min-w-0`}>
                                                                         <span>{asistente || eventoTipo(ev.tipo)}</span>
                                                                         {asistente && <Assist width={12} height={12} className="shrink-0" />}
                                                                     </div>
@@ -277,7 +277,7 @@ export default function DetallePartido() {
                                                                 <span className="text-lg shrink-0">{icono}</span>
                                                                 <div className='min-w-0'>
                                                                     <p className="font-bold text-sm leading-tight">{nombre}</p>
-                                                                    <div className='flex items-center justify-start gap-1 text-xs text-gray-500 uppercase min-w-0'>
+                                                                    <div className={`flex items-center justify-start gap-1 text-xs text-gray-500 ${!asistente ? 'uppercase' : ''} min-w-0`}>
                                                                         {asistente && <Assist width={12} height={12} className="shrink-0" />}
                                                                         <span>{asistente || eventoTipo(ev.tipo)}</span>
                                                                     </div>
