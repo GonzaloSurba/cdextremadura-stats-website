@@ -7,6 +7,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
+import { useState } from 'react';
 import { CircleFlag } from 'react-circle-flags'
 
 const PAIS_A_CODIGO = {
@@ -28,8 +29,13 @@ const PAIS_A_CODIGO = {
 };
 
 export default function CountryFlag ({ pais }) {
+    const [hasError, setHasError] = useState(false);
+    if (hasError) {
+        return null;
+    }
+
     const code = PAIS_A_CODIGO[pais?.toLowerCase()]
     return(
-        <CircleFlag countryCode={code} width="20" height="20" />
+        <CircleFlag countryCode={code} width="20" height="20" onError={() => setHasError(true)} />
     )
 }
