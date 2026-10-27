@@ -20,19 +20,19 @@ Endpoints:
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
-    auth,
-    jugadores,
-    equipos,
-    temporadas,
-    competiciones,
-    partidos,
-    estadisticas,
     alineaciones,
-    goles,
-    tarjetas,
+    auth,
+    competiciones,
     entrenadores,
+    equipos,
+    estadisticas,
+    goles,
+    jugadores,
+    partidos,
     penaltis,
-    trofeos
+    tarjetas,
+    temporadas,
+    trofeos,
 )
 
 api_router = APIRouter()

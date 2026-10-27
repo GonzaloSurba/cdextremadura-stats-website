@@ -11,13 +11,12 @@ POST  /                       → crear (protegido)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional
+from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_user_id
 from app.db.session import get_db
 from app.models.models import Alineacion
-from app.core.deps import get_current_user_id
 
 from .jugadores import JugadorSimpleOut
 
@@ -27,19 +26,19 @@ class AlineacionCreate(BaseModel):
     jugador: int
     partido: int
     titular: bool
-    minuto_entrada: Optional[int] = None
-    minuto_salida: Optional[int] = None
+    minuto_entrada: int | None = None
+    minuto_salida: int | None = None
 
 class AlineacionOut(AlineacionCreate):
     id: int
     jugador_rel: JugadorSimpleOut
-    dorsal: Optional[int] = None
-    
+    dorsal: int | None = None
+
     class Config:
         from_attributes = True
 
 class AlineacionUpdate(BaseModel):
-    minuto_salida: Optional[int] = None
+    minuto_salida: int | None = None
 
 @router.post('/', response_model=AlineacionOut, status_code=status.HTTP_201_CREATED)
 def create_alineacion(data: AlineacionCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
@@ -60,11 +59,11 @@ def update_alineacion_por_jugador(
     alineacion = db.query(Alineacion).filter(
         Alineacion.jugador == jugador,
         Alineacion.partido == partido,
-        Alineacion.titular == True,
+        Alineacion.titular,
     ).first()
     if not alineacion:
         raise HTTPException(status_code=404, detail="Alineación no encontrada")
-    
+
     alineacion.minuto_salida = data.minuto_salida
     db.commit()
     db.refresh(alineacion)

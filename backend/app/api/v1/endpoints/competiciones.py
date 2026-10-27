@@ -15,13 +15,17 @@ DELETE /competiciones/{id}   → eliminar (protegido)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, computed_field
-from typing import Optional
 
-from app.db.session import get_db
-from app.models.models import Competicion, TipoCompeticion, Temporada, CompeticionTemporada
 from app.core.deps import get_current_user_id
+from app.db.session import get_db
+from app.models.models import (
+    Competicion,
+    CompeticionTemporada,
+    Temporada,
+    TipoCompeticion,
+)
 
 from .temporadas import TemporadaOut
 
@@ -37,9 +41,9 @@ class CompeticionCreate(CompeticionBase):
     pass
 
 class CompeticionUpdate(CompeticionBase):
-    nombre: Optional[str] = None
-    pais: Optional[str] = None
-    tipo: Optional[TipoCompeticion] = None
+    nombre: str | None = None
+    pais: str | None = None
+    tipo: TipoCompeticion | None = None
 
 class CompeticionOut(CompeticionBase):
     id: int
@@ -48,14 +52,14 @@ class CompeticionOut(CompeticionBase):
 
 class CompeticionTemporadaOut(BaseModel):
     id: int
-    nombre: Optional[str] = None
-    num_jornadas: Optional[int] = None
-    num_equipos: Optional[int] = None
-    grupo: Optional[int] = None
-    ascenso: Optional[bool] = None
-    descenso: Optional[bool] = None
-    competicion_rel: Optional[CompeticionOut] = None
-    temporada_rel: Optional[TemporadaOut] = None
+    nombre: str | None = None
+    num_jornadas: int | None = None
+    num_equipos: int | None = None
+    grupo: int | None = None
+    ascenso: bool | None = None
+    descenso: bool | None = None
+    competicion_rel: CompeticionOut | None = None
+    temporada_rel: TemporadaOut | None = None
 
     class Config:
         from_attributes = True

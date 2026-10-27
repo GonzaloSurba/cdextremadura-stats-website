@@ -5,13 +5,16 @@
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
+
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from app.db.session import get_db
-from app.models.models import Partido, Jugador, Entrenador
+
 from app.core.config import settings
-from datetime import date
+from app.db.session import get_db
+from app.models.models import Entrenador, Jugador, Partido
 
 router = APIRouter(tags=["Sitemap"])
 
@@ -68,7 +71,7 @@ def get_sitemap(db: Session = Depends(get_db)):
     <lastmod>{fecha_ultimo_partido}</lastmod>
     <priority>0.6</priority>
   </url>""")
-        
+
     # 5. Entrenadores dinámicos
     for e in entrenadores:
         urls.append(f"""  <url>

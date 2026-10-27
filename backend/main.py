@@ -6,15 +6,16 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from router import api_router
-from app.core.limiter import limiter
+
 from app.api.v1.endpoints.sitemap import router as sitemap_router
+from app.core.config import settings
+from app.core.limiter import limiter
+from router import api_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

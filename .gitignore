@@ -34,6 +34,9 @@ venv/
 __pycache__/
 *.pyc
 cron/datos/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # Bloqueo archivos mios
 **/generarHash.py
@@ -42,3 +45,8 @@ generarHash.py
 sql/
 **/svg/
 svg/
+tests/
+pytest.ini
+ruff.toml
+requirements-dev.txt
+

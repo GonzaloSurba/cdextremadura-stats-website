@@ -14,24 +14,34 @@ PUT  /partidos/{id}                  → actualizar (protegido)
 DELETE /partidos/{id}                → eliminar (protegido)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import extract, or_
-from pydantic import BaseModel, computed_field
 from datetime import datetime
-from typing import Optional
 
-from app.db.session import get_db
-from app.models.models import Partido, EstadoPartido, Alineacion, GolPartido, TarjetaPartido, Entrenador, CompeticionTemporada, PenaltiTanda, Equipo, JugadorTemporada
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, computed_field
+from sqlalchemy import extract, or_
+from sqlalchemy.orm import Session, joinedload
+
 from app.core.deps import get_current_user_id
+from app.db.session import get_db
+from app.models.models import (
+    Alineacion,
+    CompeticionTemporada,
+    Equipo,
+    EstadoPartido,
+    GolPartido,
+    JugadorTemporada,
+    Partido,
+    PenaltiTanda,
+    TarjetaPartido,
+)
 
 from .alineaciones import AlineacionOut
-from .goles import GolOut
-from .tarjetas import TarjetaOut
-from .entrenadores import EntrenadorOut
 from .competiciones import CompeticionTemporadaOut
+from .entrenadores import EntrenadorOut
 from .equipos import EquipoOut
+from .goles import GolOut
 from .penaltis import PenaltiOut
+from .tarjetas import TarjetaOut
 
 router = APIRouter()
 
@@ -42,39 +52,39 @@ class PartidoBase(BaseModel):
     goles_visitante: int = 0
     fecha: datetime
     competicion_temporada: int
-    jornada: Optional[int] = None
-    estadio: Optional[str] = None
+    jornada: int | None = None
+    estadio: str | None = None
     estado: EstadoPartido = EstadoPartido.programado
     prorroga: bool = False
-    entrenador_local: Optional[int] = None
-    entrenador_visitante: Optional[int] = None
-    penaltis_local: Optional[int] = None
-    penaltis_visitantes: Optional[int] = None
+    entrenador_local: int | None = None
+    entrenador_visitante: int | None = None
+    penaltis_local: int | None = None
+    penaltis_visitantes: int | None = None
 
 class PartidoCreate(PartidoBase):
     pass
 
 class PartidoUpdate(PartidoBase):
-    equipo_local: Optional[int] = None
-    equipo_visitante: Optional[int] = None
-    fecha: Optional[datetime] = None
-    competicion_temporada: Optional[int] = None
+    equipo_local: int | None = None
+    equipo_visitante: int | None = None
+    fecha: datetime | None = None
+    competicion_temporada: int | None = None
 
 class PartidoOut(PartidoBase):
     id: int
     alineaciones: list[AlineacionOut] = []
     goles: list[GolOut] = []
     tarjetas: list[TarjetaOut] = []
-    equipo_local_rel: Optional[EquipoOut] = None
-    equipo_visitante_rel: Optional[EquipoOut] = None
-    entrenador_local_rel: Optional[EntrenadorOut] = None
-    entrenador_visitante_rel: Optional[EntrenadorOut] = None
-    competicion_temporada_rel: Optional[CompeticionTemporadaOut] = None
+    equipo_local_rel: EquipoOut | None = None
+    equipo_visitante_rel: EquipoOut | None = None
+    entrenador_local_rel: EntrenadorOut | None = None
+    entrenador_visitante_rel: EntrenadorOut | None = None
+    competicion_temporada_rel: CompeticionTemporadaOut | None = None
     tanda_penaltis: list[PenaltiOut] = []
-    
+
     @computed_field
     @property
-    def competicion(self) -> Optional[str]:
+    def competicion(self) -> str | None:
         rel = self.competicion_temporada_rel
         if rel and rel.competicion_rel:
             return rel.competicion_rel.nombre
@@ -105,7 +115,7 @@ def get_partido(partido_id: int, db: Session = Depends(get_db)):
         )\
         .filter(Partido.id == partido_id)\
         .first()
-    
+
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
 
@@ -119,7 +129,7 @@ def get_partido(partido_id: int, db: Session = Depends(get_db)):
     partido_data = PartidoOut.model_validate(partido)
     for a in partido_data.alineaciones:
         a.dorsal = dorsales.get(a.jugador)
-    
+
     return partido_data
 
 @router.get("/temporada/{competicion_temporada_id}", response_model=list[PartidoOut])
@@ -140,11 +150,11 @@ def obtener_partidos_hoy_historicos(db: Session = Depends(get_db)):
     mes_actual = hoy.month
 
     # 1. Obtenemos el ID del equipo principal (por ejemplo, Extremadura)
-    equipo_principal = db.query(Equipo).filter(Equipo.equipo_principal == True).first()
-    
+    equipo_principal = db.query(Equipo).filter(Equipo.equipo_principal).first()
+
     if not equipo_principal:
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail="No se ha configurado ningún equipo como 'equipo_principal' en la base de datos."
         )
 

@@ -17,16 +17,23 @@ PUT  /entrenadores/{id}         → actualizar (protegido)
 DELETE /entrenadores/{id}       → eliminar (protegido)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_, and_
-from pydantic import BaseModel
 from datetime import date
-from typing import Optional
 
-from app.db.session import get_db
-from app.models.models import Entrenador, Partido, EstadoPartido, EntrenadorTemporada, CompeticionTemporada, Temporada
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import and_, func, or_
+from sqlalchemy.orm import Session
+
 from app.core.deps import get_current_user_id
+from app.db.session import get_db
+from app.models.models import (
+    CompeticionTemporada,
+    Entrenador,
+    EntrenadorTemporada,
+    EstadoPartido,
+    Partido,
+    Temporada,
+)
 
 router = APIRouter()
 
@@ -36,18 +43,18 @@ router = APIRouter()
 class EntrenadorBase(BaseModel):
     nombre: str
     apellidos: str
-    nombre_conocido: Optional[str] = None
-    nacionalidad: Optional[str] = None
-    fecha_nacimiento: Optional[date] = None
-    ruta_foto: Optional[str] = None
-    localidad_nacimiento: Optional[str] = None
+    nombre_conocido: str | None = None
+    nacionalidad: str | None = None
+    fecha_nacimiento: date | None = None
+    ruta_foto: str | None = None
+    localidad_nacimiento: str | None = None
 
 class EntrenadorCreate(EntrenadorBase):
     pass
 
 class EntrenadorUpdate(EntrenadorBase):
-    nombre: Optional[str] = None
-    apellidos: Optional[str] = None
+    nombre: str | None = None
+    apellidos: str | None = None
 
 class EntrenadorOut(EntrenadorBase):
     id: int

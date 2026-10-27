@@ -10,12 +10,18 @@ Modelos SQLAlchemy — uno por tabla del schema.
 Importa este módulo en alembic/env.py para que detecte los modelos.
 """
 
-import enum
-from datetime import date, datetime
+from enum import StrEnum
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, Enum, ForeignKey,
-    Integer, String, UniqueConstraint,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -23,54 +29,54 @@ from app.db.session import Base
 
 # ── Enums ────────────────────────────────────────────────────────────────────
 
-class TipoCompeticion(str, enum.Enum):
+class TipoCompeticion(StrEnum):
     liga = "liga"
     copa = "copa"
     fase = "fase"
     amistoso = "amistoso"
 
 
-class EstadoPartido(str, enum.Enum):
+class EstadoPartido(StrEnum):
     jugado = "jugado"
     aplazado = "aplazado"
     suspendido = "suspendido"
     programado = "programado"
 
 
-class TipoGol(str, enum.Enum):
+class TipoGol(StrEnum):
     normal = "normal"
     penalti = "penalti"
     falta_directa = "falta_directa"
     propia_puerta = "propia_puerta"
 
 
-class TipoTarjeta(str, enum.Enum):
+class TipoTarjeta(StrEnum):
     amarilla = "amarilla"
     roja = "roja"
     doble_amarilla = "doble_amarilla"
 
 
-class PieDominante(str, enum.Enum):
+class PieDominante(StrEnum):
     zurdo = "zurdo"
     diestro = "diestro"
     ambidiestro = "ambidiestro"
 
 
-class RolPosicion(str, enum.Enum):
+class RolPosicion(StrEnum):
     portero = "portero"
     defensa = "defensa"
     centro_del_campo = "centro del campo"
     ataque = "ataque"
 
 
-class EstadoJugador(str, enum.Enum):
+class EstadoJugador(StrEnum):
     activo = "activo"
     cedido = "cedido"
     lesionado = "lesionado"
     baja = "baja"
 
 
-class TipoEntrenador(str, enum.Enum):
+class TipoEntrenador(StrEnum):
     principal = "principal"
     segundo = "segundo"
     otros = "otros"

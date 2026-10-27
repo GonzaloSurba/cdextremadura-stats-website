@@ -13,11 +13,11 @@ Cómo funciona:
 3. Cliente envía token en header `Authorization: Bearer
 """
 
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import jwt
 import bcrypt
+import jwt
 
 from app.core.config import settings
 

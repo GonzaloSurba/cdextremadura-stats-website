@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "W", "B"]
+
+ignore = [
+    "E501", # Ignora líneas largas
+    "B008", # Permite Depends() en argumentos por defecto (FastAPI)
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+explicit_package_bases = true
+exclude = ["venv"]
+plugins = ["pydantic.mypy"] # Esto permite a mypy entender las estructuras de Pydantic
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true

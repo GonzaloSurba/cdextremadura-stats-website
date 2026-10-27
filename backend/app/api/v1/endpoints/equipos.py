@@ -15,13 +15,12 @@ DELETE /equipos/{id}   → eliminar (protegido)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional
+from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_user_id
 from app.db.session import get_db
 from app.models.models import Equipo
-from app.core.deps import get_current_user_id
 
 router = APIRouter()
 
@@ -29,19 +28,19 @@ router = APIRouter()
 
 class EquipoBase(BaseModel):
     nombre: str
-    abreviacion: Optional[str] = None
-    nombre_corto: Optional[str] = None
-    ruta_escudo: Optional[str] = None
-    localidad: Optional[str] = None
-    pais: Optional[str] = None
+    abreviacion: str | None = None
+    nombre_corto: str | None = None
+    ruta_escudo: str | None = None
+    localidad: str | None = None
+    pais: str | None = None
     equipo_principal: bool = False
-    estadio: Optional[str] = None
+    estadio: str | None = None
 
 class EquipoCreate(EquipoBase):
     pass
 
 class EquipoUpdate(EquipoBase):
-    nombre: Optional[str] = None
+    nombre: str | None = None
 
 class EquipoOut(EquipoBase):
     id: int

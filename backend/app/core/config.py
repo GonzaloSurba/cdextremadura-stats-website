@@ -14,8 +14,9 @@ Este archivo define la configuración centralizada de la aplicación:
 - DATABASE_URL - Property que genera la URL de conexión completa
 """
 
-from pydantic_settings import BaseSettings
 from pathlib import Path
+
+from pydantic_settings import BaseSettings
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_DIR = BASE_DIR / '.env'

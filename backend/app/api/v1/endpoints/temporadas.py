@@ -14,15 +14,15 @@ PUT  /temporadas/{id}     → actualizar (protegido)
 DELETE /temporadas/{id}   → eliminar (protegido)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from datetime import date
-from typing import Optional
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.core.deps import get_current_user_id
 from app.db.session import get_db
 from app.models.models import Temporada
-from app.core.deps import get_current_user_id
 
 router = APIRouter()
 
@@ -35,7 +35,7 @@ class TemporadaCreate(TemporadaBase):
     pass
 
 class TemporadaUpdate(TemporadaBase):
-    nombre: Optional[str] = None
+    nombre: str | None = None
 
 class TemporadaOut(TemporadaBase):
     id: int

@@ -16,21 +16,29 @@ PUT  /jugadores/{id}     → actualizar (protegido)
 DELETE /jugadores/{id}   → eliminar (protegido)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, ValidationError
 from datetime import date
-from typing import Optional
 
-from app.db.session import get_db
-from app.models.models import Jugador, PieDominante
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import and_, func, or_
+from sqlalchemy.orm import Session
+
 from app.core.deps import get_current_user_id
-
-from sqlalchemy import func, and_, or_
+from app.db.session import get_db
 from app.models.models import (
-    Jugador, PieDominante, GolPartido, TarjetaPartido, Alineacion,
-    JugadorTemporada, JugadorPosicion, Posicion, Partido, EstadoPartido,
-    CompeticionTemporada, Temporada, TipoGol, RolPosicion
+    Alineacion,
+    CompeticionTemporada,
+    EstadoPartido,
+    GolPartido,
+    Jugador,
+    JugadorPosicion,
+    JugadorTemporada,
+    Partido,
+    PieDominante,
+    Posicion,
+    TarjetaPartido,
+    Temporada,
+    TipoGol,
 )
 
 router = APIRouter()
@@ -41,14 +49,14 @@ router = APIRouter()
 class JugadorBase(BaseModel):
     nombre: str
     apellidos: str
-    nacionalidad: Optional[str] = None
-    fecha_nacimiento: Optional[date] = None
-    ruta_foto: Optional[str] = None
-    pie_dominante: Optional[PieDominante] = None
-    altura: Optional[int] = None
-    peso: Optional[int] = None
-    localidad_nacimiento: Optional[str] = None
-    pais_nacimiento: Optional[str] = None
+    nacionalidad: str | None = None
+    fecha_nacimiento: date | None = None
+    ruta_foto: str | None = None
+    pie_dominante: PieDominante | None = None
+    altura: int | None = None
+    peso: int | None = None
+    localidad_nacimiento: str | None = None
+    pais_nacimiento: str | None = None
 
 
 class JugadorCreate(JugadorBase):
@@ -56,8 +64,8 @@ class JugadorCreate(JugadorBase):
 
 
 class JugadorUpdate(JugadorBase):
-    nombre: Optional[str] = None
-    apellidos: Optional[str] = None
+    nombre: str | None = None
+    apellidos: str | None = None
 
 
 class JugadorOut(JugadorBase):
@@ -68,10 +76,10 @@ class JugadorOut(JugadorBase):
 
 class JugadorSimpleOut(BaseModel):
     id: int
-    nombre_conocido: Optional[str]
+    nombre_conocido: str | None
     nombre: str
     apellidos: str
-    
+
     @property
     def nombre_completo(self) -> str:
         return self.nombre_conocido or f"{self.nombre} {self.apellidos}"
@@ -92,7 +100,7 @@ class PosicionOut(BaseModel):
 class TemporadaJugadorOut(BaseModel):
     temporada_id: int
     nombre_temporada: str
-    dorsal: Optional[int]
+    dorsal: int | None
     estado: str
     partidos_jugados: int = 0
     goles: int = 0
@@ -116,7 +124,7 @@ class EstadisticasJugadorOut(BaseModel):
 
 class JugadorDetalleOut(JugadorBase):
     id: int
-    nombre_conocido: Optional[str] = None
+    nombre_conocido: str | None = None
     posiciones: list[PosicionOut] = []
     temporadas: list[TemporadaJugadorOut] = []
     estadisticas: EstadisticasJugadorOut
@@ -128,12 +136,12 @@ class JugadorHistoricoOut(BaseModel):
     id: int
     nombre: str
     apellidos: str
-    nombre_conocido: Optional[str] = None
-    nacionalidad: Optional[str] = None
-    localidad_nacimiento: Optional[str] = None
-    pais_nacimiento: Optional[str] = None
-    ruta_foto: Optional[str] = None
-    
+    nombre_conocido: str | None = None
+    nacionalidad: str | None = None
+    localidad_nacimiento: str | None = None
+    pais_nacimiento: str | None = None
+    ruta_foto: str | None = None
+
     # Métricas agregadas calculadas en la query
     total_partidos: int
     total_goles: int
@@ -161,7 +169,7 @@ def list_jugadores_historico(db: Session = Depends(get_db)):
     Devuelve la lista completa de jugadores históricos con sus agregados estadísticos
     calculados eficientemente desde la base de datos para la vista del listado general.
     """
-    
+
     # 1. Subconsulta: Partidos Jugados (Titular o Suplente que llegó a entrar)
     subq_partidos = (
         db.query(func.count(Alineacion.id))
@@ -170,8 +178,8 @@ def list_jugadores_historico(db: Session = Depends(get_db)):
             Alineacion.jugador == Jugador.id,
             Partido.estado == EstadoPartido.jugado,
             or_(
-                Alineacion.titular == True,
-                and_(Alineacion.titular == False, Alineacion.minuto_entrada.isnot(None))
+                Alineacion.titular,
+                and_(~Alineacion.titular, Alineacion.minuto_entrada.isnot(None))
             )
         )
         .scalar_subquery()
@@ -181,8 +189,8 @@ def list_jugadores_historico(db: Session = Depends(get_db)):
     subq_goles = (
         db.query(func.count(GolPartido.id))
         .filter(
-            GolPartido.anotador == Jugador.id, 
-            GolPartido.a_favor == True
+            GolPartido.anotador == Jugador.id,
+            GolPartido.a_favor
         )
         .scalar_subquery()
     )
@@ -268,7 +276,7 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
         .filter(
             Alineacion.jugador == jugador_id,
             Partido.estado == EstadoPartido.jugado,
-            Alineacion.titular == True,
+            Alineacion.titular,
         )\
         .scalar() or 0
 
@@ -278,19 +286,19 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
         .filter(
             Alineacion.jugador == jugador_id,
             Partido.estado == EstadoPartido.jugado,
-            Alineacion.titular == False,
+            ~Alineacion.titular,
             Alineacion.minuto_entrada.isnot(None),
         )\
         .scalar() or 0
 
     # Goles totales a favor
     goles = db.query(func.count(GolPartido.id))\
-        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor == True)\
+        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor)\
         .scalar() or 0
 
     # Goles de penalti
     goles_penalti = db.query(func.count(GolPartido.id))\
-        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor == True, GolPartido.tipo == TipoGol.penalti)\
+        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor, GolPartido.tipo == TipoGol.penalti)\
         .scalar() or 0
 
     # Asistencias
@@ -339,7 +347,7 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
             Alineacion.jugador == jugador_id,
             Partido.estado == EstadoPartido.jugado,
             CompeticionTemporada.temporada.in_(temp_ids),
-            or_(Alineacion.titular == True, and_(Alineacion.titular == False, Alineacion.minuto_entrada.isnot(None)))
+            or_(Alineacion.titular, and_(~Alineacion.titular, Alineacion.minuto_entrada.isnot(None)))
         )\
         .group_by(CompeticionTemporada.temporada).all()
     partidos_map = {r.temporada: r.n for r in partidos_t}
@@ -348,7 +356,7 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
     goles_t = db.query(CompeticionTemporada.temporada, func.count(GolPartido.id).label("n"))\
         .join(Partido, Partido.id == GolPartido.partido)\
         .join(CompeticionTemporada, CompeticionTemporada.id == Partido.competicion_temporada)\
-        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor == True, CompeticionTemporada.temporada.in_(temp_ids))\
+        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor, CompeticionTemporada.temporada.in_(temp_ids))\
         .group_by(CompeticionTemporada.temporada).all()
     goles_map = {r.temporada: r.n for r in goles_t}
 
@@ -366,7 +374,7 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
         .join(CompeticionTemporada, CompeticionTemporada.id == Partido.competicion_temporada)\
         .filter(TarjetaPartido.jugador == jugador_id, CompeticionTemporada.temporada.in_(temp_ids))\
         .group_by(CompeticionTemporada.temporada, TarjetaPartido.tipo).all()
-    
+
     amarillas_map = {}
     rojas_map = {}
     for r in tarjetas_t:

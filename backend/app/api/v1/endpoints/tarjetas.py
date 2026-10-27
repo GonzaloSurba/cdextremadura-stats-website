@@ -5,12 +5,14 @@
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.core.deps import get_current_user_id
 from app.db.session import get_db
 from app.models.models import TarjetaPartido, TipoTarjeta
-from app.core.deps import get_current_user_id
 
 router = APIRouter()
 

@@ -11,10 +11,8 @@ Este archivo define dependencias FastAPI para inyección automática
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
-from app.db.session import get_db
 
 bearer_scheme = HTTPBearer()
 

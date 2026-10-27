@@ -10,12 +10,12 @@ Penaltis de una tanda de penaltis. No debe usarse para penaltis durante el tiemp
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional
+from sqlalchemy.orm import Session
+
+from app.core.deps import get_current_user_id
 from app.db.session import get_db
 from app.models.models import PenaltiTanda
-from app.core.deps import get_current_user_id
 
 from .jugadores import JugadorSimpleOut
 
@@ -30,7 +30,7 @@ class PenaltiCreate(BaseModel):
 
 class PenaltiOut(PenaltiCreate):
     id: int
-    jugador_rel: Optional[JugadorSimpleOut]
+    jugador_rel: JugadorSimpleOut | None
 
     class Config:
         from_attributes = True

@@ -11,13 +11,12 @@ Para simplificar, el usuario admin se define en variables de entorno
 ya que mi web no contiene usuarios como tal.
 """
 
-import os
-from fastapi import APIRouter, HTTPException, status, Request
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 
-from app.core.security import create_access_token, verify_password, hash_password
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.core.security import create_access_token, verify_password
 
 router = APIRouter()
 

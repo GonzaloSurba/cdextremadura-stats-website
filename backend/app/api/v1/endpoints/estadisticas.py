@@ -11,17 +11,25 @@ No hay tabla en BD — todo se calcula con queries agregadas.
 """
 
 import functools
-from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import func, and_, or_, case
-from sqlalchemy.orm import Session, joinedload
-from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import and_, case, func, or_
+from sqlalchemy.orm import Session, joinedload
 
 from app.db.session import get_db
 from app.models.models import (
-    Partido, GolPartido, TarjetaPartido, Alineacion,
-    Jugador, Equipo, CompeticionTemporada, EstadoPartido, Trofeo,
-    JugadorPosicion, Posicion
+    Alineacion,
+    CompeticionTemporada,
+    Equipo,
+    EstadoPartido,
+    GolPartido,
+    Jugador,
+    JugadorPosicion,
+    Partido,
+    Posicion,
+    TarjetaPartido,
+    Trofeo,
 )
 
 router = APIRouter()
@@ -55,9 +63,9 @@ class PosicionJugadorOut(BaseModel):
 class EstadisticaJugador(BaseModel):
     jugador_id: int
     nombre: str
-    nombre_conocido: Optional[str]
+    nombre_conocido: str | None
     apellidos: str
-    ruta_foto: Optional[str] = None
+    ruta_foto: str | None = None
     goles: int
     goles_penalti: int = 0
     asistencias: int
@@ -66,7 +74,7 @@ class EstadisticaJugador(BaseModel):
     partidos_jugados: int
     partidos_titular: int = 0
     partidos_suplente: int = 0
-    posiciones: Optional[list[PosicionJugadorOut]] = []
+    posiciones: list[PosicionJugadorOut] | None = []
 
 
 # ── Clasificación ─────────────────────────────────────────────────────────────
@@ -192,8 +200,8 @@ def get_clasificacion(
 
 @router.get("/jugadores", response_model=list[EstadisticaJugador])
 def get_estadisticas_jugadores(
-    temporada_id: Optional[int] = Query(None),
-    competicion_temporada_id: Optional[int] = Query(None),
+    temporada_id: int | None = Query(None),
+    competicion_temporada_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """
@@ -215,7 +223,7 @@ def get_estadisticas_jugadores(
     # Goles por jugador
     goles_q = (
         db.query(GolPartido.anotador, func.count().label("goles"))
-        .filter(GolPartido.partido.in_(partido_ids), GolPartido.a_favor == True)
+        .filter(GolPartido.partido.in_(partido_ids), GolPartido.a_favor)
         .group_by(GolPartido.anotador)
         .all()
     )
@@ -224,7 +232,7 @@ def get_estadisticas_jugadores(
     # Penaltis por jugador
     penaltis_q = (
         db.query(GolPartido.anotador, func.count().label("penaltis"))
-        .filter(GolPartido.partido.in_(partido_ids), GolPartido.a_favor == True, GolPartido.tipo == "penalti")
+        .filter(GolPartido.partido.in_(partido_ids), GolPartido.a_favor, GolPartido.tipo == "penalti")
         .group_by(GolPartido.anotador)
         .all()
     )
@@ -259,7 +267,7 @@ def get_estadisticas_jugadores(
         db.query(Alineacion.jugador, func.count().label("titulares"))
         .filter(
             Alineacion.partido.in_(partido_ids),
-            Alineacion.titular == True,
+            Alineacion.titular,
         )
         .group_by(Alineacion.jugador)
         .all()
@@ -271,7 +279,7 @@ def get_estadisticas_jugadores(
         db.query(Alineacion.jugador, func.count().label("suplentes"))
         .filter(
             Alineacion.partido.in_(partido_ids),
-            Alineacion.titular == False,
+            ~Alineacion.titular, # Esto equivale a Alineacion.titular == False
             Alineacion.minuto_entrada.isnot(None),
         )
         .group_by(Alineacion.jugador)
@@ -335,13 +343,13 @@ def get_estadisticas_jugadores(
 @router.get("/generales")
 def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db)):
     # 1. Identificar el equipo principal asignado
-    equipo_principal = db.query(Equipo).filter(Equipo.equipo_principal == True).first()
+    equipo_principal = db.query(Equipo).filter(Equipo.equipo_principal).first()
     if not equipo_principal:
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail="No se ha configurado ningún equipo como 'equipo_principal'."
         )
-    
+
     eq_id = equipo_principal.id
 
     # 2. Construir las condiciones lógicas de victoria, empate y derrota
@@ -350,7 +358,7 @@ def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db
         Partido.goles_local > Partido.goles_visitante,
         and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_local > Partido.penaltis_visitantes)
     ))
-    
+
     derrota_local = and_(Partido.equipo_local == eq_id, or_(
         Partido.goles_local < Partido.goles_visitante,
         and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_local < Partido.penaltis_visitantes)
@@ -361,7 +369,7 @@ def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db
         Partido.goles_visitante > Partido.goles_local,
         and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_visitantes > Partido.penaltis_local)
     ))
-    
+
     derrota_visitante = and_(Partido.equipo_visitante == eq_id, or_(
         Partido.goles_visitante < Partido.goles_local,
         and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_visitantes < Partido.penaltis_local)
@@ -394,7 +402,7 @@ def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db
 
     total_ascensos = (
         db.query(func.count(CompeticionTemporada.id))
-        .filter(CompeticionTemporada.ascenso == True)
+        .filter(CompeticionTemporada.ascenso.is_(True)) # Cuando puede ser nulo, se usa .is_()
         .scalar() or 0
     )
 
