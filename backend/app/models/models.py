@@ -10,20 +10,16 @@ Modelos SQLAlchemy — uno por tabla del schema.
 Importa este módulo en alembic/env.py para que detecte los modelos.
 """
 
+from datetime import date, datetime
 from enum import StrEnum
 
 from sqlalchemy import (
-    Boolean,
-    Column,
-    Date,
-    DateTime,
     Enum,
     ForeignKey,
-    Integer,
     String,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
@@ -87,72 +83,74 @@ class TipoEntrenador(StrEnum):
 class Temporada(Base):
     __tablename__ = "temporadas"
 
-    id           = Column(Integer, primary_key=True, autoincrement=True)
-    nombre       = Column(String(255), nullable=False)
-    fecha_inicio = Column(Date, nullable=False)
-    fecha_fin    = Column(Date, nullable=False)
+    # id = Column(Integer, primary_key=True, autoincrement=True) # Así era en SQLAlchemy antes de la versión 2.0
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(255))
+    fecha_inicio: Mapped[date]
+    fecha_fin: Mapped[date]
 
-    competiciones_temporada = relationship("CompeticionTemporada", back_populates="temporada_rel")
-    jugadores_temporadas    = relationship("JugadorTemporada",     back_populates="temporada_rel")
-    entrenadores_temporadas = relationship("EntrenadorTemporada",  back_populates="temporada_rel")
+    # competiciones_temporada = relationship("CompeticionTemporada", back_populates="temporada_rel") # Así era en SQLAlchemy antes de la versión 2.0
+    competiciones_temporada: Mapped[list["CompeticionTemporada"]] = relationship(back_populates="temporada_rel")
+    jugadores_temporadas: Mapped[list["JugadorTemporada"]] = relationship(back_populates="temporada_rel")
+    entrenadores_temporadas: Mapped[list["EntrenadorTemporada"]] = relationship(back_populates="temporada_rel")
 
 
 class Competicion(Base):
     __tablename__ = "competiciones"
 
-    id      = Column(Integer, primary_key=True, autoincrement=True)
-    nombre  = Column(String(255), nullable=False)
-    pais    = Column(String(100), nullable=False)
-    tipo    = Column(Enum(TipoCompeticion), nullable=False)
-    oficial = Column(Boolean, nullable=False, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(255))
+    pais: Mapped[str] = mapped_column(String(100))
+    tipo: Mapped[TipoCompeticion] = mapped_column(Enum(TipoCompeticion))
+    oficial: Mapped[bool] = mapped_column(default=False)
 
-    ediciones = relationship("CompeticionTemporada", back_populates="competicion_rel")
+    ediciones: Mapped[list["CompeticionTemporada"]] = relationship(back_populates="competicion_rel")
 
 
 class CompeticionTemporada(Base):
     __tablename__ = "competicion_temporada"
 
-    id           = Column(Integer, primary_key=True, autoincrement=True)
-    competicion  = Column(Integer, ForeignKey("competiciones.id"), nullable=False)
-    temporada    = Column(Integer, ForeignKey("temporadas.id"),    nullable=False)
-    num_jornadas = Column(Integer)
-    num_equipos  = Column(Integer)
-    grupo        = Column(Integer)
-    ascenso      = Column(Boolean, default=None)
-    descenso     = Column(Boolean, default=None)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    competicion: Mapped[int] = mapped_column(ForeignKey("competiciones.id"))
+    temporada: Mapped[int] = mapped_column(ForeignKey("temporadas.id"))
+    num_jornadas: Mapped[int | None]
+    num_equipos: Mapped[int | None]
+    grupo: Mapped[int | None]
+    ascenso: Mapped[bool | None] = mapped_column(default=None)
+    descenso: Mapped[bool | None] = mapped_column(default=None)
 
-    competicion_rel = relationship("Competicion", back_populates="ediciones")
-    temporada_rel   = relationship("Temporada",   back_populates="competiciones_temporada")
-    partidos        = relationship("Partido",     back_populates="competicion_temporada_rel")
-    trofeos         = relationship("Trofeo",      back_populates="competicion_temporada_rel")
+    competicion_rel: Mapped["Competicion"] = relationship(back_populates="ediciones")
+    temporada_rel: Mapped["Temporada"] = relationship(back_populates="competiciones_temporada")
+    partidos: Mapped[list["Partido"]] = relationship(back_populates="competicion_temporada_rel")
+    trofeos: Mapped[list["Trofeo"]] = relationship(back_populates="competicion_temporada_rel")
 
 
 class Equipo(Base):
     __tablename__ = "equipos"
 
-    id               = Column(Integer, primary_key=True, autoincrement=True)
-    nombre           = Column(String(255), nullable=False)
-    abreviacion      = Column(String(4), nullable=False)
-    nombre_corto     = Column(String(100))
-    ruta_escudo      = Column(String(255))
-    localidad        = Column(String(255))
-    pais             = Column(String(100))
-    equipo_principal = Column(Boolean, nullable=False, default=False)
-    estadio          = Column(String(255))
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(255))
+    abreviacion: Mapped[str] = mapped_column(String(4))
+    nombre_corto: Mapped[str | None] = mapped_column(String(100))
+    ruta_escudo: Mapped[str | None] = mapped_column(String(255))
+    localidad: Mapped[str | None] = mapped_column(String(255))
+    pais: Mapped[str | None] = mapped_column(String(100))
+    equipo_principal: Mapped[bool] = mapped_column(default=False)
+    estadio: Mapped[str | None] = mapped_column(String(255))
 
-    partidos_local     = relationship("Partido", foreign_keys="Partido.equipo_local",     back_populates="equipo_local_rel")
-    partidos_visitante = relationship("Partido", foreign_keys="Partido.equipo_visitante", back_populates="equipo_visitante_rel")
+    partidos_local: Mapped[list["Partido"]] = relationship(foreign_keys="Partido.equipo_local", back_populates="equipo_local_rel")
+    partidos_visitante: Mapped[list["Partido"]] = relationship(foreign_keys="Partido.equipo_visitante", back_populates="equipo_visitante_rel")
 
 
 class Posicion(Base):
     __tablename__ = "posiciones"
 
-    id          = Column(Integer, primary_key=True, autoincrement=True)
-    nombre      = Column(String(100), nullable=False)
-    abreviacion = Column(String(4),   nullable=False)
-    rol         = Column(Enum(RolPosicion, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(100))
+    abreviacion: Mapped[str] = mapped_column(String(4))
+    rol: Mapped[RolPosicion] = mapped_column(Enum(RolPosicion, values_callable=lambda x: [e.value for e in x]))
 
-    jugadores = relationship("JugadorPosicion", back_populates="posicion_rel")
+    jugadores: Mapped[list["JugadorPosicion"]] = relationship(back_populates="posicion_rel")
 
 
 # ── Entrenadores ──────────────────────────────────────────────────────────────
@@ -160,31 +158,31 @@ class Posicion(Base):
 class Entrenador(Base):
     __tablename__ = "entrenadores"
 
-    id               = Column(Integer, primary_key=True, autoincrement=True)
-    nombre           = Column(String(255), nullable=False)
-    apellidos        = Column(String(255), nullable=False)
-    nombre_conocido  = Column(String(200))
-    nacionalidad     = Column(String(100))
-    fecha_nacimiento = Column(Date)
-    ruta_foto        = Column(String(255))
-    localidad_nacimiento = Column(String(255))
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(255))
+    apellidos: Mapped[str] = mapped_column(String(255))
+    nombre_conocido: Mapped[str | None] = mapped_column(String(200))
+    nacionalidad: Mapped[str | None] = mapped_column(String(100))
+    fecha_nacimiento: Mapped[date | None]
+    ruta_foto: Mapped[str | None] = mapped_column(String(255))
+    localidad_nacimiento: Mapped[str | None] = mapped_column(String(255))
 
-    temporadas_rel       = relationship("EntrenadorTemporada", back_populates="entrenadores_temporadas")
-    partidos_como_local  = relationship("Partido", foreign_keys="Partido.entrenador_local",     back_populates="entrenador_local_rel")
-    partidos_como_visit  = relationship("Partido", foreign_keys="Partido.entrenador_visitante", back_populates="entrenador_visitante_rel")
+    temporadas_rel: Mapped[list["EntrenadorTemporada"]] = relationship(back_populates="entrenadores_temporadas")
+    partidos_como_local: Mapped[list["Partido"]] = relationship(foreign_keys="Partido.entrenador_local", back_populates="entrenador_local_rel")
+    partidos_como_visit: Mapped[list["Partido"]] = relationship(foreign_keys="Partido.entrenador_visitante", back_populates="entrenador_visitante_rel")
 
 
 class EntrenadorTemporada(Base):
     __tablename__ = "entrenadores_temporadas"
 
-    id                          = Column(Integer, primary_key=True, autoincrement=True)
-    entrenador                  = Column(Integer, ForeignKey("entrenadores.id"), nullable=False)
-    temporada                   = Column(Integer, ForeignKey("temporadas.id"),   nullable=False)
-    tipo                        = Column(Enum(TipoEntrenador), nullable=False, default=TipoEntrenador.principal)
-    entrenador_equipo_principal = Column(Boolean, nullable=False, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    entrenador: Mapped[int] = mapped_column(ForeignKey("entrenadores.id"))
+    temporada: Mapped[int] = mapped_column(ForeignKey("temporadas.id"))
+    tipo: Mapped[TipoEntrenador] = mapped_column(Enum(TipoEntrenador), default=TipoEntrenador.principal)
+    entrenador_equipo_principal: Mapped[bool] = mapped_column(default=False)
 
-    entrenadores_temporadas = relationship("Entrenador", back_populates="temporadas_rel")
-    temporada_rel  = relationship("Temporada",  back_populates="entrenadores_temporadas")
+    entrenadores_temporadas: Mapped["Entrenador"] = relationship(back_populates="temporadas_rel")
+    temporada_rel: Mapped["Temporada"] = relationship(back_populates="entrenadores_temporadas")
 
 
 # ── Jugadores ─────────────────────────────────────────────────────────────────
@@ -192,51 +190,51 @@ class EntrenadorTemporada(Base):
 class Jugador(Base):
     __tablename__ = "jugadores"
 
-    id               = Column(Integer, primary_key=True, autoincrement=True)
-    nombre           = Column(String(255), nullable=False)
-    apellidos        = Column(String(255), nullable=False)
-    nombre_conocido  = Column(String(255))
-    nacionalidad     = Column(String(100))
-    fecha_nacimiento = Column(Date)
-    ruta_foto        = Column(String(255))
-    pie_dominante    = Column(Enum(PieDominante))
-    altura           = Column(Integer)
-    peso             = Column(Integer)
-    localidad_nacimiento = Column(String(255))
-    pais_nacimiento  = Column(String(255))
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(255))
+    apellidos: Mapped[str] = mapped_column(String(255))
+    nombre_conocido: Mapped[str | None] = mapped_column(String(255))
+    nacionalidad: Mapped[str | None] = mapped_column(String(100))
+    fecha_nacimiento: Mapped[date | None]
+    ruta_foto: Mapped[str | None] = mapped_column(String(255))
+    pie_dominante: Mapped[PieDominante | None] = mapped_column(Enum(PieDominante))
+    altura: Mapped[int | None]
+    peso: Mapped[int | None]
+    localidad_nacimiento: Mapped[str | None] = mapped_column(String(255))
+    pais_nacimiento: Mapped[str | None] = mapped_column(String(255), default="España")
 
-    posiciones   = relationship("JugadorPosicion",  back_populates="jugador_rel")
-    temporadas   = relationship("JugadorTemporada", back_populates="jugador_rel")
-    alineaciones = relationship("Alineacion",       back_populates="jugador_rel")
-    goles        = relationship("GolPartido",        foreign_keys="GolPartido.anotador", back_populates="anotador_rel")
-    asistencias  = relationship("GolPartido",        foreign_keys="GolPartido.asistente", back_populates="asistente_rel")
-    tarjetas     = relationship("TarjetaPartido",    back_populates="jugador_rel")
-    penaltis_tanda = relationship("PenaltiTanda", back_populates="jugador_rel")
+    posiciones: Mapped[list["JugadorPosicion"]] = relationship(back_populates="jugador_rel")
+    temporadas: Mapped[list["JugadorTemporada"]] = relationship(back_populates="jugador_rel")
+    alineaciones: Mapped[list["Alineacion"]] = relationship(back_populates="jugador_rel")
+    goles: Mapped[list["GolPartido"]] = relationship(foreign_keys="GolPartido.anotador", back_populates="anotador_rel")
+    asistencias: Mapped[list["GolPartido"]] = relationship(foreign_keys="GolPartido.asistente", back_populates="asistente_rel")
+    tarjetas: Mapped[list["TarjetaPartido"]] = relationship(back_populates="jugador_rel")
+    penaltis_tanda: Mapped[list["PenaltiTanda"]] = relationship(back_populates="jugador_rel")
 
 
 class JugadorPosicion(Base):
     __tablename__ = "jugador_posiciones"
 
-    id                    = Column(Integer, primary_key=True, autoincrement=True)
-    jugador               = Column(Integer, ForeignKey("jugadores.id"),  nullable=False)
-    posicion              = Column(Integer, ForeignKey("posiciones.id"), nullable=False)
-    es_posicion_principal = Column(Boolean, nullable=False, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    jugador: Mapped[int] = mapped_column(ForeignKey("jugadores.id"))
+    posicion: Mapped[int] = mapped_column(ForeignKey("posiciones.id"))
+    es_posicion_principal: Mapped[bool] = mapped_column(default=False)
 
-    jugador_rel  = relationship("Jugador",  back_populates="posiciones")
-    posicion_rel = relationship("Posicion", back_populates="jugadores")
+    jugador_rel: Mapped["Jugador"] = relationship(back_populates="posiciones")
+    posicion_rel: Mapped["Posicion"] = relationship(back_populates="jugadores")
 
 
 class JugadorTemporada(Base):
     __tablename__ = "jugadores_temporadas"
 
-    id        = Column(Integer, primary_key=True, autoincrement=True)
-    jugador   = Column(Integer, ForeignKey("jugadores.id"),  nullable=False)
-    temporada = Column(Integer, ForeignKey("temporadas.id"), nullable=False)
-    dorsal    = Column(Integer)
-    estado    = Column(Enum(EstadoJugador), nullable=False, default=EstadoJugador.activo)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    jugador: Mapped[int] = mapped_column(ForeignKey("jugadores.id"))
+    temporada: Mapped[int] = mapped_column(ForeignKey("temporadas.id"))
+    dorsal: Mapped[int | None]
+    estado: Mapped[EstadoJugador] = mapped_column(Enum(EstadoJugador), default=EstadoJugador.activo)
 
-    jugador_rel   = relationship("Jugador",   back_populates="temporadas")
-    temporada_rel = relationship("Temporada", back_populates="jugadores_temporadas")
+    jugador_rel: Mapped["Jugador"] = relationship(back_populates="temporadas")
+    temporada_rel: Mapped["Temporada"] = relationship(back_populates="jugadores_temporadas")
 
 
 # ── Partidos y eventos ────────────────────────────────────────────────────────
@@ -244,91 +242,91 @@ class JugadorTemporada(Base):
 class Partido(Base):
     __tablename__ = "partidos"
 
-    id                    = Column(Integer, primary_key=True, autoincrement=True)
-    equipo_local          = Column(Integer, ForeignKey("equipos.id"),               nullable=False)
-    equipo_visitante      = Column(Integer, ForeignKey("equipos.id"),               nullable=False)
-    goles_local           = Column(Integer, nullable=False, default=0)
-    goles_visitante       = Column(Integer, nullable=False, default=0)
-    fecha                 = Column(DateTime, nullable=False)
-    competicion_temporada = Column(Integer, ForeignKey("competicion_temporada.id"), nullable=False)
-    jornada               = Column(Integer)
-    estadio               = Column(String(255))
-    estado                = Column(Enum(EstadoPartido), nullable=False, default=EstadoPartido.programado)
-    prorroga              = Column(Boolean, nullable=False, default=False)
-    entrenador_local      = Column(Integer, ForeignKey("entrenadores.id"))
-    entrenador_visitante  = Column(Integer, ForeignKey("entrenadores.id"))
-    penaltis_local        = Column(Integer)
-    penaltis_visitantes   = Column(Integer)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    equipo_local: Mapped[int] = mapped_column(ForeignKey("equipos.id"))
+    equipo_visitante: Mapped[int] = mapped_column(ForeignKey("equipos.id"))
+    goles_local: Mapped[int] = mapped_column(default=0)
+    goles_visitante: Mapped[int] = mapped_column(default=0)
+    fecha: Mapped[datetime]
+    competicion_temporada: Mapped[int] = mapped_column(ForeignKey("competicion_temporada.id"))
+    jornada: Mapped[int | None]
+    estadio: Mapped[str | None] = mapped_column(String(255))
+    estado: Mapped[EstadoPartido] = mapped_column(Enum(EstadoPartido), default=EstadoPartido.programado)
+    prorroga: Mapped[bool] = mapped_column(default=False)
+    entrenador_local: Mapped[int | None] = mapped_column(ForeignKey("entrenadores.id"))
+    entrenador_visitante: Mapped[int | None] = mapped_column(ForeignKey("entrenadores.id"))
+    penaltis_local: Mapped[int | None]
+    penaltis_visitantes: Mapped[int | None]
 
-    equipo_local_rel          = relationship("Equipo",              foreign_keys=[equipo_local],          back_populates="partidos_local")
-    equipo_visitante_rel      = relationship("Equipo",              foreign_keys=[equipo_visitante],      back_populates="partidos_visitante")
-    competicion_temporada_rel = relationship("CompeticionTemporada",                                      back_populates="partidos")
-    entrenador_local_rel      = relationship("Entrenador",          foreign_keys=[entrenador_local],      back_populates="partidos_como_local")
-    entrenador_visitante_rel  = relationship("Entrenador",          foreign_keys=[entrenador_visitante],  back_populates="partidos_como_visit")
-    alineaciones              = relationship("Alineacion",                                                back_populates="partido_rel",   cascade="all, delete-orphan", order_by="Alineacion.id")
-    goles                     = relationship("GolPartido",                                                back_populates="partido_rel",   cascade="all, delete-orphan")
-    tarjetas                  = relationship("TarjetaPartido",                                            back_populates="partido_rel",   cascade="all, delete-orphan")
-    tanda_penaltis            = relationship("PenaltiTanda", back_populates="partido_rel", cascade="all, delete-orphan", order_by="PenaltiTanda.orden")
+    equipo_local_rel: Mapped["Equipo"] = relationship(foreign_keys=[equipo_local], back_populates="partidos_local")
+    equipo_visitante_rel: Mapped["Equipo"] = relationship(foreign_keys=[equipo_visitante], back_populates="partidos_visitante")
+    competicion_temporada_rel: Mapped["CompeticionTemporada"] = relationship(back_populates="partidos")
+    entrenador_local_rel: Mapped["Entrenador | None"] = relationship(foreign_keys=[entrenador_local], back_populates="partidos_como_local")
+    entrenador_visitante_rel: Mapped["Entrenador | None"] = relationship(foreign_keys=[entrenador_visitante], back_populates="partidos_como_visit")
+    alineaciones: Mapped[list["Alineacion"]] = relationship(back_populates="partido_rel", cascade="all, delete-orphan", order_by="Alineacion.id")
+    goles: Mapped[list["GolPartido"]] = relationship(back_populates="partido_rel", cascade="all, delete-orphan")
+    tarjetas: Mapped[list["TarjetaPartido"]] = relationship(back_populates="partido_rel", cascade="all, delete-orphan")
+    tanda_penaltis: Mapped[list["PenaltiTanda"]] = relationship(back_populates="partido_rel", cascade="all, delete-orphan", order_by="PenaltiTanda.orden")
 
 class Alineacion(Base):
     __tablename__ = "alineaciones"
 
-    id             = Column(Integer, primary_key=True, autoincrement=True)
-    jugador        = Column(Integer, ForeignKey("jugadores.id"), nullable=False)
-    partido        = Column(Integer, ForeignKey("partidos.id"),  nullable=False)
-    titular        = Column(Boolean, nullable=False, default=False)
-    minuto_entrada = Column(Integer)
-    minuto_salida  = Column(Integer)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    jugador: Mapped[int] = mapped_column(ForeignKey("jugadores.id"))
+    partido: Mapped[int] = mapped_column(ForeignKey("partidos.id"))
+    titular: Mapped[bool] = mapped_column(default=False)
+    minuto_entrada: Mapped[int | None]
+    minuto_salida: Mapped[int | None]
 
-    jugador_rel = relationship("Jugador", back_populates="alineaciones")
-    partido_rel = relationship("Partido", back_populates="alineaciones")
+    jugador_rel: Mapped["Jugador"] = relationship(back_populates="alineaciones")
+    partido_rel: Mapped["Partido"] = relationship(back_populates="alineaciones")
 
 
 class GolPartido(Base):
     __tablename__ = "goles_partido"
 
-    id         = Column(Integer, primary_key=True, autoincrement=True)
-    numero_gol = Column(Integer)
-    anotador   = Column(Integer, ForeignKey("jugadores.id"), nullable=False)
-    minuto     = Column(Integer, nullable=False)
-    partido    = Column(Integer, ForeignKey("partidos.id"),  nullable=False)
-    tipo       = Column(Enum(TipoGol), nullable=False, default=TipoGol.normal)
-    asistente  = Column(Integer, ForeignKey("jugadores.id"))
-    a_favor    = Column(Boolean, nullable=False, default=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    numero_gol: Mapped[int | None]
+    anotador: Mapped[int] = mapped_column(ForeignKey("jugadores.id"))
+    minuto: Mapped[int]
+    partido: Mapped[int] = mapped_column(ForeignKey("partidos.id"))
+    tipo: Mapped[TipoGol] = mapped_column(Enum(TipoGol), default=TipoGol.normal)
+    asistente: Mapped[int | None] = mapped_column(ForeignKey("jugadores.id"))
+    a_favor: Mapped[bool] = mapped_column(default=True)
 
-    anotador_rel  = relationship("Jugador", foreign_keys=[anotador],  back_populates="goles")
-    asistente_rel = relationship("Jugador", foreign_keys=[asistente], back_populates="asistencias")
-    partido_rel   = relationship("Partido", back_populates="goles")
+    anotador_rel: Mapped["Jugador"] = relationship(foreign_keys=[anotador], back_populates="goles")
+    asistente_rel: Mapped["Jugador | None"] = relationship(foreign_keys=[asistente], back_populates="asistencias")
+    partido_rel: Mapped["Partido"] = relationship(back_populates="goles")
 
 
 class TarjetaPartido(Base):
     __tablename__ = "tarjetas_partido"
 
-    id      = Column(Integer, primary_key=True, autoincrement=True)
-    jugador = Column(Integer, ForeignKey("jugadores.id"), nullable=False)
-    partido = Column(Integer, ForeignKey("partidos.id"),  nullable=False)
-    tipo    = Column(Enum(TipoTarjeta), nullable=False)
-    minuto  = Column(Integer, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    jugador: Mapped[int] = mapped_column(ForeignKey("jugadores.id"))
+    partido: Mapped[int] = mapped_column(ForeignKey("partidos.id"))
+    tipo: Mapped[TipoTarjeta] = mapped_column(Enum(TipoTarjeta))
+    minuto: Mapped[int]
 
-    jugador_rel = relationship("Jugador", back_populates="tarjetas")
-    partido_rel = relationship("Partido", back_populates="tarjetas")
+    jugador_rel: Mapped["Jugador"] = relationship(back_populates="tarjetas")
+    partido_rel: Mapped["Partido"] = relationship(back_populates="tarjetas")
 
 class PenaltiTanda(Base):
     __tablename__ = "tandas_penaltis"
 
-    id      = Column(Integer, primary_key=True, autoincrement=True)
-    partido = Column(Integer, ForeignKey("partidos.id"),  nullable=False)
-    jugador = Column(Integer, ForeignKey("jugadores.id"), nullable=False)
-    a_favor = Column(Boolean, nullable=False, default=True)
-    anotado = Column(Boolean, nullable=False, default=True)
-    orden   = Column(Integer, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    partido: Mapped[int] = mapped_column(ForeignKey("partidos.id"))
+    jugador: Mapped[int] = mapped_column(ForeignKey("jugadores.id"))
+    a_favor: Mapped[bool] = mapped_column(default=True)
+    anotado: Mapped[bool] = mapped_column(default=True)
+    orden: Mapped[int]
 
     __table_args__ = (
         UniqueConstraint("partido", "orden", name="uq_partido_orden"),
     )
 
-    partido_rel = relationship("Partido", back_populates="tanda_penaltis")
-    jugador_rel = relationship("Jugador", back_populates="penaltis_tanda")
+    partido_rel: Mapped["Partido"] = relationship(back_populates="tanda_penaltis")
+    jugador_rel: Mapped["Jugador"] = relationship(back_populates="penaltis_tanda")
 
 
 # ── Trofeos ───────────────────────────────────────────────────────────────────
@@ -336,7 +334,7 @@ class PenaltiTanda(Base):
 class Trofeo(Base):
     __tablename__ = "trofeos"
 
-    id                    = Column(Integer, primary_key=True, autoincrement=True)
-    competicion_temporada = Column(Integer, ForeignKey("competicion_temporada.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    competicion_temporada: Mapped[int] = mapped_column(ForeignKey("competicion_temporada.id"))
 
-    competicion_temporada_rel = relationship("CompeticionTemporada", back_populates="trofeos")
+    competicion_temporada_rel: Mapped["CompeticionTemporada"] = relationship(back_populates="trofeos")
