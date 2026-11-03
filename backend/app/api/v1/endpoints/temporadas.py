@@ -17,30 +17,33 @@ DELETE /temporadas/{id}   → eliminar (protegido)
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
+from app.core.updates import apply_updates
 from app.db.session import get_db
 from app.models.models import Temporada
 
 router = APIRouter()
 
 class TemporadaBase(BaseModel):
-    nombre: str
+    nombre: str = Field(max_length=255)
     fecha_inicio: date
     fecha_fin: date
 
 class TemporadaCreate(TemporadaBase):
     pass
 
-class TemporadaUpdate(TemporadaBase):
-    nombre: str | None = None
+class TemporadaUpdate(BaseModel):
+    nombre: str | None = Field(default=None, max_length=255)
+    fecha_inicio: date | None = None
+    fecha_fin: date | None = None
 
 class TemporadaOut(TemporadaBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
-    class Config:
-        from_attributes = True
 
 @router.get("/", response_model=list[TemporadaOut])
 def list_temporadas(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
@@ -66,8 +69,7 @@ def update_temporada(temporada_id: int, data: TemporadaUpdate, db: Session = Dep
     temporada = db.get(Temporada, temporada_id)
     if not temporada:
         raise HTTPException(status_code=404, detail="Temporada no encontrada")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(temporada, field, value)
+    apply_updates(temporada, data)
     db.commit()
     db.refresh(temporada)
     return temporada

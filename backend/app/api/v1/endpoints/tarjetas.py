@@ -7,7 +7,7 @@
 # (at your option) any later version.
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
@@ -23,9 +23,9 @@ class TarjetaCreate(BaseModel):
     tipo: TipoTarjeta
 
 class TarjetaOut(TarjetaCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
-    class Config:
-        from_attributes = True
 
 @router.post("/", response_model=TarjetaOut, status_code=status.HTTP_201_CREATED)
 def create_tarjeta(data: TarjetaCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):

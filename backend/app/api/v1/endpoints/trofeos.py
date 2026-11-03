@@ -7,7 +7,7 @@
 # (at your option) any later version.
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
@@ -22,11 +22,10 @@ class TrofeoCreate(BaseModel):
     competicion_temporada: int
 
 class TrofeoOut(TrofeoCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     competicion_temporada_rel: CompeticionTemporadaOut | None
-
-    class Config:
-        from_attributes = True
 
 @router.get("/", response_model=list[TrofeoOut])
 def list_trofeos(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):

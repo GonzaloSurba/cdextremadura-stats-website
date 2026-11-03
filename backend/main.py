@@ -5,9 +5,13 @@
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
+
+from typing import cast
+
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -23,7 +27,11 @@ app = FastAPI(
     )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+def _handle_rate_limit(request: Request, exc: Exception) -> Response:
+    return _rate_limit_exceeded_handler(request, cast(RateLimitExceeded, exc))
+
+app.add_exception_handler(RateLimitExceeded, _handle_rate_limit)
 
 origins = [
     "http://localhost:5173",
@@ -51,3 +59,4 @@ def root():
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
+

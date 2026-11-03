@@ -15,10 +15,11 @@ DELETE /competiciones/{id}   → eliminar (protegido)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
+from app.core.updates import apply_updates
 from app.db.session import get_db
 from app.models.models import (
     Competicion,
@@ -32,25 +33,28 @@ from .temporadas import TemporadaOut
 router = APIRouter()
 
 class CompeticionBase(BaseModel):
-    nombre: str
-    pais: str
+    nombre: str = Field(max_length=255)
+    pais: str = Field(max_length=100)
     tipo: TipoCompeticion
     oficial: bool = False
 
 class CompeticionCreate(CompeticionBase):
     pass
 
-class CompeticionUpdate(CompeticionBase):
-    nombre: str | None = None
-    pais: str | None = None
+class CompeticionUpdate(BaseModel):
+    nombre: str | None = Field(default=None, max_length=255)
+    pais: str | None = Field(default=None, max_length=100)
     tipo: TipoCompeticion | None = None
+    oficial: bool | None = None
 
 class CompeticionOut(CompeticionBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
-    class Config:
-        from_attributes = True
 
 class CompeticionTemporadaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre: str | None = None
     num_jornadas: int | None = None
@@ -60,9 +64,6 @@ class CompeticionTemporadaOut(BaseModel):
     descenso: bool | None = None
     competicion_rel: CompeticionOut | None = None
     temporada_rel: TemporadaOut | None = None
-
-    class Config:
-        from_attributes = True
 
 @router.get("/", response_model=list[CompeticionOut])
 def list_competiciones(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
@@ -96,8 +97,8 @@ def list_competicion_temporada(
             num_equipos=ct.num_equipos,
             ascenso=ct.ascenso,
             descenso=ct.descenso,
-            competicion_rel=ct.competicion_rel,
-            temporada_rel=ct.temporada_rel
+            competicion_rel=CompeticionOut.model_validate(ct.competicion_rel),
+            temporada_rel=TemporadaOut.model_validate(ct.temporada_rel),
         )
         for ct, comp_nombre, temp_nombre in resultados
     ]
@@ -122,8 +123,7 @@ def update_competicion(competicion_id: int, data: CompeticionUpdate, db: Session
     competicion = db.get(Competicion, competicion_id)
     if not competicion:
         raise HTTPException(status_code=404, detail="Competición no encontrada")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(competicion, field, value)
+    apply_updates(competicion, data)
     db.commit()
     db.refresh(competicion)
     return competicion

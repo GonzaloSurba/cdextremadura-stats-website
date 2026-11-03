@@ -20,11 +20,12 @@ DELETE /entrenadores/{id}       → eliminar (protegido)
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
+from app.core.updates import apply_updates
 from app.db.session import get_db
 from app.models.models import (
     CompeticionTemporada,
@@ -41,26 +42,30 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class EntrenadorBase(BaseModel):
-    nombre: str
-    apellidos: str
-    nombre_conocido: str | None = None
-    nacionalidad: str | None = None
+    nombre: str = Field(max_length=255)
+    apellidos: str = Field(max_length=255)
+    nombre_conocido: str | None = Field(default=None, max_length=200)
+    nacionalidad: str | None = Field(default=None, max_length=100)
     fecha_nacimiento: date | None = None
-    ruta_foto: str | None = None
-    localidad_nacimiento: str | None = None
+    ruta_foto: str | None = Field(default=None, max_length=255)
+    localidad_nacimiento: str | None = Field(default=None, max_length=255)
 
 class EntrenadorCreate(EntrenadorBase):
     pass
 
-class EntrenadorUpdate(EntrenadorBase):
-    nombre: str | None = None
-    apellidos: str | None = None
+class EntrenadorUpdate(BaseModel):
+    nombre: str | None = Field(default=None, max_length=255)
+    apellidos: str | None = Field(default=None, max_length=255)
+    nombre_conocido: str | None = Field(default=None, max_length=200)
+    nacionalidad: str | None = Field(default=None, max_length=100)
+    fecha_nacimiento: date | None = None
+    ruta_foto: str | None = Field(default=None, max_length=255)
+    localidad_nacimiento: str | None = Field(default=None, max_length=255)
 
 class EntrenadorOut(EntrenadorBase):
-    id: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: int
 
 class EntrenadorHistoricoOut(EntrenadorOut):
     total_partidos: int
@@ -312,8 +317,7 @@ def update_entrenador(
     entrenador = db.get(Entrenador, entrenador_id)
     if not entrenador:
         raise HTTPException(status_code=404, detail="Entrenador no encontrado")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(entrenador, field, value)
+    apply_updates(entrenador, data)
     db.commit()
     db.refresh(entrenador)
     return entrenador

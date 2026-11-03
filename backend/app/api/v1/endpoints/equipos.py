@@ -15,10 +15,11 @@ DELETE /equipos/{id}   → eliminar (protegido)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
+from app.core.updates import apply_updates
 from app.db.session import get_db
 from app.models.models import Equipo
 
@@ -27,25 +28,32 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class EquipoBase(BaseModel):
-    nombre: str
-    abreviacion: str | None = None
-    nombre_corto: str | None = None
-    ruta_escudo: str | None = None
-    localidad: str | None = None
-    pais: str | None = None
+    nombre: str = Field(max_length=255)
+    abreviacion: str = Field(max_length=4)
+    nombre_corto: str | None = Field(default=None, max_length=100)
+    ruta_escudo: str | None = Field(default=None, max_length=255)
+    localidad: str | None = Field(default=None, max_length=255)
+    pais: str | None = Field(default=None, max_length=100)
     equipo_principal: bool = False
-    estadio: str | None = None
+    estadio: str | None = Field(default=None, max_length=255)
 
 class EquipoCreate(EquipoBase):
     pass
 
-class EquipoUpdate(EquipoBase):
-    nombre: str | None = None
+class EquipoUpdate(BaseModel):
+    nombre: str | None = Field(default=None, max_length=255)
+    abreviacion: str | None = Field(default=None, max_length=4)
+    nombre_corto: str | None = Field(default=None, max_length=100)
+    ruta_escudo: str | None = Field(default=None, max_length=255)
+    localidad: str | None = Field(default=None, max_length=255)
+    pais: str | None = Field(default=None, max_length=100)
+    equipo_principal: bool | None = None
+    estadio: str | None = Field(default=None, max_length=255)
 
 class EquipoOut(EquipoBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
-    class Config:
-        from_attributes = True
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
@@ -73,8 +81,7 @@ def update_equipo(equipo_id: int, data: EquipoUpdate, db: Session = Depends(get_
     equipo = db.get(Equipo, equipo_id)
     if not equipo:
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(equipo, field, value)
+    apply_updates(equipo, data)
     db.commit()
     db.refresh(equipo)
     return equipo

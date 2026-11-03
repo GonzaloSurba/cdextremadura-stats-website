@@ -19,11 +19,12 @@ DELETE /jugadores/{id}   → eliminar (protegido)
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
+from app.core.updates import apply_updates
 from app.db.session import get_db
 from app.models.models import (
     Alineacion,
@@ -47,34 +48,45 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class JugadorBase(BaseModel):
-    nombre: str
-    apellidos: str
-    nacionalidad: str | None = None
+    nombre: str = Field(max_length=255)
+    apellidos: str = Field(max_length=255)
+    nombre_conocido: str | None = Field(default=None, max_length=255)
+    nacionalidad: str | None = Field(default=None, max_length=100)
     fecha_nacimiento: date | None = None
-    ruta_foto: str | None = None
+    ruta_foto: str | None = Field(default=None, max_length=255)
     pie_dominante: PieDominante | None = None
     altura: int | None = None
     peso: int | None = None
-    localidad_nacimiento: str | None = None
-    pais_nacimiento: str | None = None
+    localidad_nacimiento: str | None = Field(default=None, max_length=255)
+    pais_nacimiento: str | None = Field(default="España", max_length=255)
 
 
 class JugadorCreate(JugadorBase):
     pass
 
 
-class JugadorUpdate(JugadorBase):
-    nombre: str | None = None
-    apellidos: str | None = None
+class JugadorUpdate(BaseModel):
+    nombre: str | None = Field(default=None, max_length=255)
+    apellidos: str | None = Field(default=None, max_length=255)
+    nombre_conocido: str | None = Field(default=None, max_length=255)
+    nacionalidad: str | None = Field(default=None, max_length=100)
+    fecha_nacimiento: date | None = None
+    ruta_foto: str | None = Field(default=None, max_length=255)
+    pie_dominante: PieDominante | None = None
+    altura: int | None = None
+    peso: int | None = None
+    localidad_nacimiento: str | None = Field(default=None, max_length=255)
+    pais_nacimiento: str | None = Field(default=None, max_length=255)
 
 
 class JugadorOut(JugadorBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
 
-    class Config:
-        from_attributes = True
-
 class JugadorSimpleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre_conocido: str | None
     nombre: str
@@ -84,20 +96,18 @@ class JugadorSimpleOut(BaseModel):
     def nombre_completo(self) -> str:
         return self.nombre_conocido or f"{self.nombre} {self.apellidos}"
 
-    class Config:
-        from_attributes = True
-
 class PosicionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre: str
     abreviacion: str
     rol: str
     es_posicion_principal: bool
 
-    class Config:
-        from_attributes = True
-
 class TemporadaJugadorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     temporada_id: int
     nombre_temporada: str
     dorsal: int | None
@@ -107,9 +117,6 @@ class TemporadaJugadorOut(BaseModel):
     asistencias: int = 0
     tarjetas_amarillas: int = 0
     tarjetas_rojas: int = 0
-
-    class Config:
-        from_attributes = True
 
 class EstadisticasJugadorOut(BaseModel):
     goles: int
@@ -123,16 +130,17 @@ class EstadisticasJugadorOut(BaseModel):
 
 
 class JugadorDetalleOut(JugadorBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre_conocido: str | None = None
     posiciones: list[PosicionOut] = []
     temporadas: list[TemporadaJugadorOut] = []
     estadisticas: EstadisticasJugadorOut
 
-    class Config:
-        from_attributes = True
-
 class JugadorHistoricoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre: str
     apellidos: str
@@ -148,9 +156,6 @@ class JugadorHistoricoOut(BaseModel):
     total_asistencias: int
     total_tarjetas: int
     total_temporadas: int
-
-    class Config:
-        from_attributes = True
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -311,8 +316,8 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
         .filter(TarjetaPartido.jugador == jugador_id)\
         .group_by(TarjetaPartido.tipo)\
         .all()
-    amarillas = sum(r.n for r in tarjetas if r.tipo in ("amarilla", "doble_amarilla"))
-    rojas = sum(r.n for r in tarjetas if r.tipo == "roja")
+    amarillas = sum(r.n for r in tarjetas if r.tipo == "amarilla")
+    rojas = sum(r.n for r in tarjetas if r.tipo in ("doble_amarilla", "roja")) # La segunda amarilla (doble_amarilla) la considero una roja
 
     # Posiciones
     posiciones_rel = db.query(JugadorPosicion)\
@@ -375,10 +380,10 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
         .filter(TarjetaPartido.jugador == jugador_id, CompeticionTemporada.temporada.in_(temp_ids))\
         .group_by(CompeticionTemporada.temporada, TarjetaPartido.tipo).all()
 
-    amarillas_map = {}
-    rojas_map = {}
+    amarillas_map: dict[int, int] = {}
+    rojas_map: dict[int, int] = {}
     for r in tarjetas_t:
-        if r.tipo in ("amarilla", "doble_amarilla"):
+        if r.tipo == "amarilla": # La segunda amarilla (doble_amarilla) la considero una roja
             amarillas_map[r.temporada] = amarillas_map.get(r.temporada, 0) + r.n
         else:
             rojas_map[r.temporada] = rojas_map.get(r.temporada, 0) + r.n
@@ -438,8 +443,7 @@ def update_jugador(
     jugador = db.get(Jugador, jugador_id)
     if not jugador:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(jugador, field, value)
+    apply_updates(jugador, data)
     db.commit()
     db.refresh(jugador)
     return jugador

@@ -7,7 +7,7 @@
 # (at your option) any later version.
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
@@ -28,12 +28,11 @@ class GolCreate(BaseModel):
     numero_gol: int | None = None
 
 class GolOut(GolCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     anotador_rel: JugadorSimpleOut
     asistente_rel: JugadorSimpleOut | None
-
-    class Config:
-        from_attributes = True
 
 @router.post("/", response_model=GolOut, status_code=status.HTTP_201_CREATED)
 def create_gol(data: GolCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):

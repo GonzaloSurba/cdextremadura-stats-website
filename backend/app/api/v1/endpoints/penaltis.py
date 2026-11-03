@@ -10,7 +10,7 @@ Penaltis de una tanda de penaltis. No debe usarse para penaltis durante el tiemp
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
@@ -29,11 +29,10 @@ class PenaltiCreate(BaseModel):
     orden: int
 
 class PenaltiOut(PenaltiCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     jugador_rel: JugadorSimpleOut | None
-
-    class Config:
-        from_attributes = True
 
 @router.post("/", response_model=PenaltiOut, status_code=status.HTTP_201_CREATED)
 def create_penalti(data: PenaltiCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):

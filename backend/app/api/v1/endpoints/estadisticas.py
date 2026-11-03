@@ -13,7 +13,7 @@ No hay tabla en BD — todo se calcula con queries agregadas.
 import functools
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session, joinedload
 
@@ -52,13 +52,12 @@ class ClasificacionEquipo(BaseModel):
     pts: int
 
 class PosicionJugadorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre: str
     abreviacion: str
     es_posicion_principal: bool
-
-    class Config:
-        from_attributes = True
 
 class EstadisticaJugador(BaseModel):
     jugador_id: int
@@ -123,13 +122,13 @@ def get_clasificacion(
             p.equipo_local,
             p.equipo_local_rel.nombre,
             p.equipo_local_rel.abreviacion,
-            p.equipo_local_rel.nombre_corto,
+            p.equipo_local_rel.nombre_corto or p.equipo_local_rel.nombre,
         )
         init_equipo(
             p.equipo_visitante,
             p.equipo_visitante_rel.nombre,
             p.equipo_visitante_rel.abreviacion,
-            p.equipo_visitante_rel.nombre_corto,
+            p.equipo_visitante_rel.nombre_corto or p.equipo_visitante_rel.nombre,
         )
 
         gl = p.goles_local if p.goles_local is not None else 0
@@ -256,11 +255,11 @@ def get_estadisticas_jugadores(
     )
     amarillas_map: dict[int, int] = {}
     rojas_map: dict[int, int] = {}
-    for r in tarjetas_q:
-        if r.tipo in ("amarilla", "doble_amarilla"):
-            amarillas_map[r.jugador] = amarillas_map.get(r.jugador, 0) + r.n
+    for tar in tarjetas_q:
+        if tar.tipo == "amarilla": # La segunda amarilla (doble_amarilla) la considero una roja
+            amarillas_map[tar.jugador] = amarillas_map.get(tar.jugador, 0) + tar.n
         else:
-            rojas_map[r.jugador] = rojas_map.get(r.jugador, 0) + r.n
+            rojas_map[tar.jugador] = rojas_map.get(tar.jugador, 0) + tar.n
 
     # Partidos como titular
     titulares_q = (
@@ -305,16 +304,16 @@ def get_estadisticas_jugadores(
     )
 
     posiciones_map: dict[int, list[PosicionJugadorOut]] = {}
-    for r in posiciones_q:
+    for pos in posiciones_q:
         pos_out = PosicionJugadorOut(
-            id=r.id,
-            nombre=r.nombre,
-            abreviacion=r.abreviacion,
-            es_posicion_principal=r.es_posicion_principal
+            id=pos.id,
+            nombre=pos.nombre,
+            abreviacion=pos.abreviacion,
+            es_posicion_principal=pos.es_posicion_principal
         )
-        if r.jugador not in posiciones_map:
-            posiciones_map[r.jugador] = []
-        posiciones_map[r.jugador].append(pos_out)
+        if pos.jugador not in posiciones_map:
+            posiciones_map[pos.jugador] = []
+        posiciones_map[pos.jugador].append(pos_out)
 
     result = [
         EstadisticaJugador(
@@ -405,6 +404,9 @@ def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db
         .filter(CompeticionTemporada.ascenso.is_(True)) # Cuando puede ser nulo, se usa .is_()
         .scalar() or 0
     )
+
+    if stats is None:
+        raise HTTPException(status_code=500, detail="No se pudieron calcular las estadísticas")
 
     # 4. Formatear la respuesta mapeando valores nulos a 0 (por si no hay partidos disputados aún)
     return {

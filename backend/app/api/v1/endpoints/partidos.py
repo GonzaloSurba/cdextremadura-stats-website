@@ -17,11 +17,12 @@ DELETE /partidos/{id}                → eliminar (protegido)
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 from sqlalchemy import extract, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.deps import get_current_user_id
+from app.core.updates import apply_updates
 from app.db.session import get_db
 from app.models.models import (
     Alineacion,
@@ -53,7 +54,7 @@ class PartidoBase(BaseModel):
     fecha: datetime
     competicion_temporada: int
     jornada: int | None = None
-    estadio: str | None = None
+    estadio: str | None = Field(default=None, max_length=255)
     estado: EstadoPartido = EstadoPartido.programado
     prorroga: bool = False
     entrenador_local: int | None = None
@@ -64,13 +65,25 @@ class PartidoBase(BaseModel):
 class PartidoCreate(PartidoBase):
     pass
 
-class PartidoUpdate(PartidoBase):
+class PartidoUpdate(BaseModel):
     equipo_local: int | None = None
     equipo_visitante: int | None = None
+    goles_local: int | None = None
+    goles_visitante: int | None = None
     fecha: datetime | None = None
     competicion_temporada: int | None = None
+    jornada: int | None = None
+    estadio: str | None = Field(default=None, max_length=255)
+    estado: EstadoPartido | None = None
+    prorroga: bool | None = None
+    entrenador_local: int | None = None
+    entrenador_visitante: int | None = None
+    penaltis_local: int | None = None
+    penaltis_visitantes: int | None = None
 
 class PartidoOut(PartidoBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     alineaciones: list[AlineacionOut] = []
     goles: list[GolOut] = []
@@ -82,16 +95,13 @@ class PartidoOut(PartidoBase):
     competicion_temporada_rel: CompeticionTemporadaOut | None = None
     tanda_penaltis: list[PenaltiOut] = []
 
-    @computed_field
+    @computed_field # type: ignore[prop-decorator]
     @property
     def competicion(self) -> str | None:
         rel = self.competicion_temporada_rel
         if rel and rel.competicion_rel:
             return rel.competicion_rel.nombre
         return None
-
-    class Config:
-        from_attributes = True
 
 @router.get("/", response_model=list[PartidoOut])
 def list_partidos(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
@@ -197,8 +207,18 @@ def update_partido(partido_id: int, data: PartidoUpdate, db: Session = Depends(g
     partido = db.get(Partido, partido_id)
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(partido, field, value)
+
+    changes = data.model_dump(exclude_unset=True)
+    local = changes.get("equipo_local", partido.equipo_local)
+    visitante = changes.get("equipo_visitante", partido.equipo_visitante)
+
+    if local == visitante:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="'equipo_local' y 'equipo_visitante' no pueden ser el mismo",
+        )
+
+    apply_updates(partido, data)
     db.commit()
     db.refresh(partido)
     return partido
