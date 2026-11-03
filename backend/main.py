@@ -21,15 +21,14 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from router import api_router
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION
-    )
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
 app.state.limiter = limiter
 
+
 def _handle_rate_limit(request: Request, exc: Exception) -> Response:
     return _rate_limit_exceeded_handler(request, cast(RateLimitExceeded, exc))
+
 
 app.add_exception_handler(RateLimitExceeded, _handle_rate_limit)
 
@@ -44,19 +43,20 @@ origins = [
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,             # Permite el origen de Vite
+    allow_origins=origins,  # Permite el origen de Vite
     allow_credentials=True,
-    allow_methods=["*"],               # Permite todos los métodos (GET, POST, OPTIONS, etc.)
-    allow_headers=["*"],               # Permite todos los headers
+    allow_methods=["*"],  # Permite todos los métodos (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Permite todos los headers
 )
 
 app.include_router(sitemap_router)
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+
 @app.get("/")
 def root():
     return {"message": "API de estadísticas del Club Deportivo Extremadura"}
 
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
-

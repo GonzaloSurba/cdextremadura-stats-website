@@ -32,14 +32,17 @@ from .temporadas import TemporadaOut
 
 router = APIRouter()
 
+
 class CompeticionBase(BaseModel):
     nombre: str = Field(max_length=255)
     pais: str = Field(max_length=100)
     tipo: TipoCompeticion
     oficial: bool = False
 
+
 class CompeticionCreate(CompeticionBase):
     pass
+
 
 class CompeticionUpdate(BaseModel):
     nombre: str | None = Field(default=None, max_length=255)
@@ -47,10 +50,12 @@ class CompeticionUpdate(BaseModel):
     tipo: TipoCompeticion | None = None
     oficial: bool | None = None
 
+
 class CompeticionOut(CompeticionBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
 
 class CompeticionTemporadaOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -65,9 +70,11 @@ class CompeticionTemporadaOut(BaseModel):
     competicion_rel: CompeticionOut | None = None
     temporada_rel: TemporadaOut | None = None
 
+
 @router.get("/", response_model=list[CompeticionOut])
 def list_competiciones(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
     return db.query(Competicion).offset(skip).limit(limit).all()
+
 
 @router.get("/temporadas", response_model=list[CompeticionTemporadaOut])
 def list_competicion_temporada(
@@ -103,6 +110,7 @@ def list_competicion_temporada(
         for ct, comp_nombre, temp_nombre in resultados
     ]
 
+
 @router.get("/{competicion_id}", response_model=CompeticionOut)
 def get_competicion(competicion_id: int, db: Session = Depends(get_db)):
     competicion = db.get(Competicion, competicion_id)
@@ -110,16 +118,27 @@ def get_competicion(competicion_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Competición no encontrada")
     return competicion
 
+
 @router.post("/", response_model=CompeticionOut, status_code=status.HTTP_201_CREATED)
-def create_competicion(data: CompeticionCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def create_competicion(
+    data: CompeticionCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     competicion = Competicion(**data.model_dump())
     db.add(competicion)
     db.commit()
     db.refresh(competicion)
     return competicion
 
+
 @router.put("/{competicion_id}", response_model=CompeticionOut)
-def update_competicion(competicion_id: int, data: CompeticionUpdate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def update_competicion(
+    competicion_id: int,
+    data: CompeticionUpdate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     competicion = db.get(Competicion, competicion_id)
     if not competicion:
         raise HTTPException(status_code=404, detail="Competición no encontrada")
@@ -128,8 +147,13 @@ def update_competicion(competicion_id: int, data: CompeticionUpdate, db: Session
     db.refresh(competicion)
     return competicion
 
+
 @router.delete("/{competicion_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_competicion(competicion_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def delete_competicion(
+    competicion_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     competicion = db.get(Competicion, competicion_id)
     if not competicion:
         raise HTTPException(status_code=404, detail="Competición no encontrada")

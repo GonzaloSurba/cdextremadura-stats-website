@@ -27,6 +27,7 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class EquipoBase(BaseModel):
     nombre: str = Field(max_length=255)
     abreviacion: str = Field(max_length=4)
@@ -37,8 +38,10 @@ class EquipoBase(BaseModel):
     equipo_principal: bool = False
     estadio: str | None = Field(default=None, max_length=255)
 
+
 class EquipoCreate(EquipoBase):
     pass
+
 
 class EquipoUpdate(BaseModel):
     nombre: str | None = Field(default=None, max_length=255)
@@ -50,16 +53,20 @@ class EquipoUpdate(BaseModel):
     equipo_principal: bool | None = None
     estadio: str | None = Field(default=None, max_length=255)
 
+
 class EquipoOut(EquipoBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
 
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 
 @router.get("/", response_model=list[EquipoOut])
 def list_equipos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(Equipo).offset(skip).limit(limit).all()
+
 
 @router.get("/{equipo_id}", response_model=EquipoOut)
 def get_equipo(equipo_id: int, db: Session = Depends(get_db)):
@@ -68,16 +75,27 @@ def get_equipo(equipo_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
     return equipo
 
+
 @router.post("/", response_model=EquipoOut, status_code=status.HTTP_201_CREATED)
-def create_equipo(data: EquipoCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def create_equipo(
+    data: EquipoCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     equipo = Equipo(**data.model_dump())
     db.add(equipo)
     db.commit()
     db.refresh(equipo)
     return equipo
 
+
 @router.put("/{equipo_id}", response_model=EquipoOut)
-def update_equipo(equipo_id: int, data: EquipoUpdate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def update_equipo(
+    equipo_id: int,
+    data: EquipoUpdate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     equipo = db.get(Equipo, equipo_id)
     if not equipo:
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
@@ -86,8 +104,11 @@ def update_equipo(equipo_id: int, data: EquipoUpdate, db: Session = Depends(get_
     db.refresh(equipo)
     return equipo
 
+
 @router.delete("/{equipo_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_equipo(equipo_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def delete_equipo(
+    equipo_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)
+):
     equipo = db.get(Equipo, equipo_id)
     if not equipo:
         raise HTTPException(status_code=404, detail="Equipo no encontrado")

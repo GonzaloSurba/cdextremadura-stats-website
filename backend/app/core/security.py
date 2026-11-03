@@ -27,12 +27,12 @@ def hash_password(password: str) -> str:
     Hashea contraseñas con bcrypt
     """
     # Convertimos la contraseña a bytes
-    pwd_bytes = password.encode('utf-8')
+    pwd_bytes = password.encode("utf-8")
     # Generamos el salt y el hash
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(pwd_bytes, salt)
     # Devolvemos como string para que sea compatible con tu base de datos/env
-    return hashed.decode('utf-8')
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -41,8 +41,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     try:
         return bcrypt.checkpw(
-            password=plain_password.encode('utf-8'),
-            hashed_password=hashed_password.encode('utf-8')
+            password=plain_password.encode("utf-8"),
+            hashed_password=hashed_password.encode("utf-8"),
         )
     except Exception:
         return False
@@ -62,7 +62,9 @@ def decode_access_token(token: str) -> str | None:
     Decodifica y valida token JWT
     """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         return payload.get("sub")
     except Exception:
         return None

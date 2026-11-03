@@ -46,6 +46,7 @@ from .tarjetas import TarjetaOut
 
 router = APIRouter()
 
+
 class PartidoBase(BaseModel):
     equipo_local: int
     equipo_visitante: int
@@ -62,8 +63,10 @@ class PartidoBase(BaseModel):
     penaltis_local: int | None = None
     penaltis_visitantes: int | None = None
 
+
 class PartidoCreate(PartidoBase):
     pass
+
 
 class PartidoUpdate(BaseModel):
     equipo_local: int | None = None
@@ -81,6 +84,7 @@ class PartidoUpdate(BaseModel):
     penaltis_local: int | None = None
     penaltis_visitantes: int | None = None
 
+
 class PartidoOut(PartidoBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -95,7 +99,7 @@ class PartidoOut(PartidoBase):
     competicion_temporada_rel: CompeticionTemporadaOut | None = None
     tanda_penaltis: list[PenaltiOut] = []
 
-    @computed_field # type: ignore[prop-decorator]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def competicion(self) -> str | None:
         rel = self.competicion_temporada_rel
@@ -103,14 +107,17 @@ class PartidoOut(PartidoBase):
             return rel.competicion_rel.nombre
         return None
 
+
 @router.get("/", response_model=list[PartidoOut])
 def list_partidos(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
     return db.query(Partido).offset(skip).limit(limit).all()
 
+
 @router.get("/{partido_id}", response_model=PartidoOut)
 def get_partido(partido_id: int, db: Session = Depends(get_db)):
-    #partido = db.get(Partido, partido_id)
-    partido = db.query(Partido)\
+    # partido = db.get(Partido, partido_id)
+    partido = (
+        db.query(Partido)
         .options(
             joinedload(Partido.alineaciones).joinedload(Alineacion.jugador_rel),
             joinedload(Partido.goles).joinedload(GolPartido.anotador_rel),
@@ -120,11 +127,14 @@ def get_partido(partido_id: int, db: Session = Depends(get_db)):
             joinedload(Partido.equipo_visitante_rel),
             joinedload(Partido.entrenador_local_rel),
             joinedload(Partido.entrenador_visitante_rel),
-            joinedload(Partido.competicion_temporada_rel).joinedload(CompeticionTemporada.competicion_rel),
+            joinedload(Partido.competicion_temporada_rel).joinedload(
+                CompeticionTemporada.competicion_rel
+            ),
             joinedload(Partido.tanda_penaltis).joinedload(PenaltiTanda.jugador_rel),
-        )\
-        .filter(Partido.id == partido_id)\
+        )
+        .filter(Partido.id == partido_id)
         .first()
+    )
 
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
@@ -133,8 +143,8 @@ def get_partido(partido_id: int, db: Session = Depends(get_db)):
     dorsales = {
         jt.jugador: jt.dorsal
         for jt in db.query(JugadorTemporada)
-                .filter(JugadorTemporada.temporada == temporada_id)
-                .all()
+        .filter(JugadorTemporada.temporada == temporada_id)
+        .all()
     }
     partido_data = PartidoOut.model_validate(partido)
     for a in partido_data.alineaciones:
@@ -142,12 +152,18 @@ def get_partido(partido_id: int, db: Session = Depends(get_db)):
 
     return partido_data
 
+
 @router.get("/temporada/{competicion_temporada_id}", response_model=list[PartidoOut])
-def get_partidos_temporada(competicion_temporada_id: int, db: Session = Depends(get_db)):
-    partidos = db.query(Partido).filter(Partido.competicion_temporada == competicion_temporada_id)
+def get_partidos_temporada(
+    competicion_temporada_id: int, db: Session = Depends(get_db)
+):
+    partidos = db.query(Partido).filter(
+        Partido.competicion_temporada == competicion_temporada_id
+    )
     if not partidos:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
     return partidos
+
 
 @router.get("/efemerides/hoy", response_model=list[PartidoOut])
 def obtener_partidos_hoy_historicos(db: Session = Depends(get_db)):
@@ -165,7 +181,7 @@ def obtener_partidos_hoy_historicos(db: Session = Depends(get_db)):
     if not equipo_principal:
         raise HTTPException(
             status_code=404,
-            detail="No se ha configurado ningún equipo como 'equipo_principal' en la base de datos."
+            detail="No se ha configurado ningún equipo como 'equipo_principal' en la base de datos.",
         )
 
     # 2. Buscamos los partidos filtrando por día, mes y participación del equipo
@@ -175,17 +191,17 @@ def obtener_partidos_hoy_historicos(db: Session = Depends(get_db)):
         .options(
             joinedload(Partido.equipo_local_rel),
             joinedload(Partido.equipo_visitante_rel),
-            joinedload(Partido.competicion_temporada_rel)
+            joinedload(Partido.competicion_temporada_rel),
         )
         .filter(
             # Filtrado de efemérides (mismo día y mes prescindiendo del año)
-            extract('day', Partido.fecha) == dia_actual,
-            extract('month', Partido.fecha) == mes_actual,
+            extract("day", Partido.fecha) == dia_actual,
+            extract("month", Partido.fecha) == mes_actual,
             # El equipo principal debe ser el local O el visitante
             or_(
                 Partido.equipo_local == equipo_principal.id,
-                Partido.equipo_visitante == equipo_principal.id
-            )
+                Partido.equipo_visitante == equipo_principal.id,
+            ),
         )
         # Opcional: Ordenamos del más reciente al más antiguo
         .order_by(Partido.fecha.desc())
@@ -194,16 +210,27 @@ def obtener_partidos_hoy_historicos(db: Session = Depends(get_db)):
 
     return partidos
 
+
 @router.post("/", response_model=PartidoOut, status_code=status.HTTP_201_CREATED)
-def create_partido(data: PartidoCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def create_partido(
+    data: PartidoCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     partido = Partido(**data.model_dump())
     db.add(partido)
     db.commit()
     db.refresh(partido)
     return partido
 
+
 @router.put("/{partido_id}", response_model=PartidoOut)
-def update_partido(partido_id: int, data: PartidoUpdate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def update_partido(
+    partido_id: int,
+    data: PartidoUpdate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     partido = db.get(Partido, partido_id)
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
@@ -223,8 +250,13 @@ def update_partido(partido_id: int, data: PartidoUpdate, db: Session = Depends(g
     db.refresh(partido)
     return partido
 
+
 @router.delete("/{partido_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_partido(partido_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def delete_partido(
+    partido_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     partido = db.get(Partido, partido_id)
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")

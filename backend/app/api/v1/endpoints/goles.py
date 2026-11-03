@@ -18,6 +18,7 @@ from .jugadores import JugadorSimpleOut
 
 router = APIRouter()
 
+
 class GolCreate(BaseModel):
     partido: int
     anotador: int
@@ -27,6 +28,7 @@ class GolCreate(BaseModel):
     a_favor: bool = True
     numero_gol: int | None = None
 
+
 class GolOut(GolCreate):
     model_config = ConfigDict(from_attributes=True)
 
@@ -34,16 +36,24 @@ class GolOut(GolCreate):
     anotador_rel: JugadorSimpleOut
     asistente_rel: JugadorSimpleOut | None
 
+
 @router.post("/", response_model=GolOut, status_code=status.HTTP_201_CREATED)
-def create_gol(data: GolCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def create_gol(
+    data: GolCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     gol = GolPartido(**data.model_dump())
     db.add(gol)
     db.commit()
     db.refresh(gol)
     return gol
 
+
 @router.delete("/{gol_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_gol(gol_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def delete_gol(
+    gol_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)
+):
     gol = db.get(GolPartido, gol_id)
     if not gol:
         raise HTTPException(status_code=404, detail="Gol no encontrado")

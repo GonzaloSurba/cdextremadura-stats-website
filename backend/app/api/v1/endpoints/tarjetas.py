@@ -16,27 +16,39 @@ from app.models.models import TarjetaPartido, TipoTarjeta
 
 router = APIRouter()
 
+
 class TarjetaCreate(BaseModel):
     partido: int
     jugador: int
     minuto: int
     tipo: TipoTarjeta
 
+
 class TarjetaOut(TarjetaCreate):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
 
+
 @router.post("/", response_model=TarjetaOut, status_code=status.HTTP_201_CREATED)
-def create_tarjeta(data: TarjetaCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def create_tarjeta(
+    data: TarjetaCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     tarjeta = TarjetaPartido(**data.model_dump())
     db.add(tarjeta)
     db.commit()
     db.refresh(tarjeta)
     return tarjeta
 
+
 @router.delete("/{tarjeta_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_tarjeta(tarjeta_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def delete_tarjeta(
+    tarjeta_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     tarjeta = db.get(TarjetaPartido, tarjeta_id)
     if not tarjeta:
         raise HTTPException(status_code=404, detail="Tarjeta no encontrada")

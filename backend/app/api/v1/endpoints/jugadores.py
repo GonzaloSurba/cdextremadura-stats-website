@@ -47,6 +47,7 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class JugadorBase(BaseModel):
     nombre: str = Field(max_length=255)
     apellidos: str = Field(max_length=255)
@@ -84,6 +85,7 @@ class JugadorOut(JugadorBase):
 
     id: int
 
+
 class JugadorSimpleOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -96,6 +98,7 @@ class JugadorSimpleOut(BaseModel):
     def nombre_completo(self) -> str:
         return self.nombre_conocido or f"{self.nombre} {self.apellidos}"
 
+
 class PosicionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -104,6 +107,7 @@ class PosicionOut(BaseModel):
     abreviacion: str
     rol: str
     es_posicion_principal: bool
+
 
 class TemporadaJugadorOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -117,6 +121,7 @@ class TemporadaJugadorOut(BaseModel):
     asistencias: int = 0
     tarjetas_amarillas: int = 0
     tarjetas_rojas: int = 0
+
 
 class EstadisticasJugadorOut(BaseModel):
     goles: int
@@ -137,6 +142,7 @@ class JugadorDetalleOut(JugadorBase):
     posiciones: list[PosicionOut] = []
     temporadas: list[TemporadaJugadorOut] = []
     estadisticas: EstadisticasJugadorOut
+
 
 class JugadorHistoricoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -160,6 +166,7 @@ class JugadorHistoricoOut(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/", response_model=list[JugadorOut])
 def list_jugadores(
     skip: int = 0,
@@ -167,6 +174,7 @@ def list_jugadores(
     db: Session = Depends(get_db),
 ):
     return db.query(Jugador).offset(skip).limit(limit).all()
+
 
 @router.get("/historico", response_model=list[JugadorHistoricoOut])
 def list_jugadores_historico(db: Session = Depends(get_db)):
@@ -184,8 +192,8 @@ def list_jugadores_historico(db: Session = Depends(get_db)):
             Partido.estado == EstadoPartido.jugado,
             or_(
                 Alineacion.titular,
-                and_(~Alineacion.titular, Alineacion.minuto_entrada.isnot(None))
-            )
+                and_(~Alineacion.titular, Alineacion.minuto_entrada.isnot(None)),
+            ),
         )
         .scalar_subquery()
     )
@@ -193,10 +201,7 @@ def list_jugadores_historico(db: Session = Depends(get_db)):
     # 2. Subconsulta: Goles Marcados (a favor)
     subq_goles = (
         db.query(func.count(GolPartido.id))
-        .filter(
-            GolPartido.anotador == Jugador.id,
-            GolPartido.a_favor
-        )
+        .filter(GolPartido.anotador == Jugador.id, GolPartido.a_favor)
         .scalar_subquery()
     )
 
@@ -229,7 +234,7 @@ def list_jugadores_historico(db: Session = Depends(get_db)):
             func.coalesce(subq_goles, 0).label("total_goles"),
             func.coalesce(subq_asistencias, 0).label("total_asistencias"),
             func.coalesce(subq_tarjetas, 0).label("total_tarjetas"),
-            func.coalesce(subq_temporadas, 0).label("total_temporadas")
+            func.coalesce(subq_temporadas, 0).label("total_temporadas"),
         )
         .filter(
             db.query(JugadorTemporada)
@@ -261,6 +266,7 @@ def list_jugadores_historico(db: Session = Depends(get_db)):
 
     return lista_historico
 
+
 @router.get("/{jugador_id}", response_model=JugadorOut)
 def get_jugador(jugador_id: int, db: Session = Depends(get_db)):
     jugador = db.get(Jugador, jugador_id)
@@ -276,114 +282,179 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
 
     # Partidos como titular
-    titulares = db.query(func.count(Alineacion.id))\
-        .join(Partido, Partido.id == Alineacion.partido)\
+    titulares = (
+        db.query(func.count(Alineacion.id))
+        .join(Partido, Partido.id == Alineacion.partido)
         .filter(
             Alineacion.jugador == jugador_id,
             Partido.estado == EstadoPartido.jugado,
             Alineacion.titular,
-        )\
-        .scalar() or 0
+        )
+        .scalar()
+        or 0
+    )
 
     # Partidos como suplente que entró
-    suplentes = db.query(func.count(Alineacion.id))\
-        .join(Partido, Partido.id == Alineacion.partido)\
+    suplentes = (
+        db.query(func.count(Alineacion.id))
+        .join(Partido, Partido.id == Alineacion.partido)
         .filter(
             Alineacion.jugador == jugador_id,
             Partido.estado == EstadoPartido.jugado,
             ~Alineacion.titular,
             Alineacion.minuto_entrada.isnot(None),
-        )\
-        .scalar() or 0
+        )
+        .scalar()
+        or 0
+    )
 
     # Goles totales a favor
-    goles = db.query(func.count(GolPartido.id))\
-        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor)\
-        .scalar() or 0
+    goles = (
+        db.query(func.count(GolPartido.id))
+        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor)
+        .scalar()
+        or 0
+    )
 
     # Goles de penalti
-    goles_penalti = db.query(func.count(GolPartido.id))\
-        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor, GolPartido.tipo == TipoGol.penalti)\
-        .scalar() or 0
+    goles_penalti = (
+        db.query(func.count(GolPartido.id))
+        .filter(
+            GolPartido.anotador == jugador_id,
+            GolPartido.a_favor,
+            GolPartido.tipo == TipoGol.penalti,
+        )
+        .scalar()
+        or 0
+    )
 
     # Asistencias
-    asistencias = db.query(func.count(GolPartido.id))\
-        .filter(GolPartido.asistente == jugador_id)\
-        .scalar() or 0
+    asistencias = (
+        db.query(func.count(GolPartido.id))
+        .filter(GolPartido.asistente == jugador_id)
+        .scalar()
+        or 0
+    )
 
     # Tarjetas
-    tarjetas = db.query(TarjetaPartido.tipo, func.count().label("n"))\
-        .filter(TarjetaPartido.jugador == jugador_id)\
-        .group_by(TarjetaPartido.tipo)\
+    tarjetas = (
+        db.query(TarjetaPartido.tipo, func.count().label("n"))
+        .filter(TarjetaPartido.jugador == jugador_id)
+        .group_by(TarjetaPartido.tipo)
         .all()
+    )
     amarillas = sum(r.n for r in tarjetas if r.tipo == "amarilla")
-    rojas = sum(r.n for r in tarjetas if r.tipo in ("doble_amarilla", "roja")) # La segunda amarilla (doble_amarilla) la considero una roja
+    rojas = sum(
+        r.n for r in tarjetas if r.tipo in ("doble_amarilla", "roja")
+    )  # La segunda amarilla (doble_amarilla) la considero una roja
 
     # Posiciones
-    posiciones_rel = db.query(JugadorPosicion)\
-        .join(Posicion)\
-        .filter(JugadorPosicion.jugador == jugador_id)\
+    posiciones_rel = (
+        db.query(JugadorPosicion)
+        .join(Posicion)
+        .filter(JugadorPosicion.jugador == jugador_id)
         .all()
+    )
     posiciones = [
         PosicionOut(
             id=jp.posicion_rel.id,
             nombre=jp.posicion_rel.nombre,
             abreviacion=jp.posicion_rel.abreviacion,
             rol=jp.posicion_rel.rol.value,
-            es_posicion_principal=jp.es_posicion_principal
+            es_posicion_principal=jp.es_posicion_principal,
         )
         for jp in posiciones_rel
     ]
 
-    #Temporadass
-    temporadas_rel = db.query(JugadorTemporada)\
-        .join(Temporada, Temporada.id == JugadorTemporada.temporada)\
-        .filter(JugadorTemporada.jugador == jugador_id)\
+    # Temporadass
+    temporadas_rel = (
+        db.query(JugadorTemporada)
+        .join(Temporada, Temporada.id == JugadorTemporada.temporada)
+        .filter(JugadorTemporada.jugador == jugador_id)
         .all()
+    )
 
     # Obtener IDs de las temporadas del jugador para filtrar las agrupaciones
     temp_ids = [jt.temporada for jt in temporadas_rel]
 
     # 1. Partidos por temporada
-    partidos_t = db.query(CompeticionTemporada.temporada, func.count(Alineacion.id).label("n"))\
-        .join(Partido, Partido.competicion_temporada == CompeticionTemporada.id)\
-        .join(Alineacion, Alineacion.partido == Partido.id)\
+    partidos_t = (
+        db.query(CompeticionTemporada.temporada, func.count(Alineacion.id).label("n"))
+        .join(Partido, Partido.competicion_temporada == CompeticionTemporada.id)
+        .join(Alineacion, Alineacion.partido == Partido.id)
         .filter(
             Alineacion.jugador == jugador_id,
             Partido.estado == EstadoPartido.jugado,
             CompeticionTemporada.temporada.in_(temp_ids),
-            or_(Alineacion.titular, and_(~Alineacion.titular, Alineacion.minuto_entrada.isnot(None)))
-        )\
-        .group_by(CompeticionTemporada.temporada).all()
+            or_(
+                Alineacion.titular,
+                and_(~Alineacion.titular, Alineacion.minuto_entrada.isnot(None)),
+            ),
+        )
+        .group_by(CompeticionTemporada.temporada)
+        .all()
+    )
     partidos_map = {r.temporada: r.n for r in partidos_t}
 
     # 2. Goles por temporada
-    goles_t = db.query(CompeticionTemporada.temporada, func.count(GolPartido.id).label("n"))\
-        .join(Partido, Partido.id == GolPartido.partido)\
-        .join(CompeticionTemporada, CompeticionTemporada.id == Partido.competicion_temporada)\
-        .filter(GolPartido.anotador == jugador_id, GolPartido.a_favor, CompeticionTemporada.temporada.in_(temp_ids))\
-        .group_by(CompeticionTemporada.temporada).all()
+    goles_t = (
+        db.query(CompeticionTemporada.temporada, func.count(GolPartido.id).label("n"))
+        .join(Partido, Partido.id == GolPartido.partido)
+        .join(
+            CompeticionTemporada,
+            CompeticionTemporada.id == Partido.competicion_temporada,
+        )
+        .filter(
+            GolPartido.anotador == jugador_id,
+            GolPartido.a_favor,
+            CompeticionTemporada.temporada.in_(temp_ids),
+        )
+        .group_by(CompeticionTemporada.temporada)
+        .all()
+    )
     goles_map = {r.temporada: r.n for r in goles_t}
 
     # 3. Asistencias por temporada
-    asist_t = db.query(CompeticionTemporada.temporada, func.count(GolPartido.id).label("n"))\
-        .join(Partido, Partido.id == GolPartido.partido)\
-        .join(CompeticionTemporada, CompeticionTemporada.id == Partido.competicion_temporada)\
-        .filter(GolPartido.asistente == jugador_id, CompeticionTemporada.temporada.in_(temp_ids))\
-        .group_by(CompeticionTemporada.temporada).all()
+    asist_t = (
+        db.query(CompeticionTemporada.temporada, func.count(GolPartido.id).label("n"))
+        .join(Partido, Partido.id == GolPartido.partido)
+        .join(
+            CompeticionTemporada,
+            CompeticionTemporada.id == Partido.competicion_temporada,
+        )
+        .filter(
+            GolPartido.asistente == jugador_id,
+            CompeticionTemporada.temporada.in_(temp_ids),
+        )
+        .group_by(CompeticionTemporada.temporada)
+        .all()
+    )
     asist_map = {r.temporada: r.n for r in asist_t}
 
     # 4. Tarjetas por temporada
-    tarjetas_t = db.query(CompeticionTemporada.temporada, TarjetaPartido.tipo, func.count().label("n"))\
-        .join(Partido, Partido.id == TarjetaPartido.partido)\
-        .join(CompeticionTemporada, CompeticionTemporada.id == Partido.competicion_temporada)\
-        .filter(TarjetaPartido.jugador == jugador_id, CompeticionTemporada.temporada.in_(temp_ids))\
-        .group_by(CompeticionTemporada.temporada, TarjetaPartido.tipo).all()
+    tarjetas_t = (
+        db.query(
+            CompeticionTemporada.temporada, TarjetaPartido.tipo, func.count().label("n")
+        )
+        .join(Partido, Partido.id == TarjetaPartido.partido)
+        .join(
+            CompeticionTemporada,
+            CompeticionTemporada.id == Partido.competicion_temporada,
+        )
+        .filter(
+            TarjetaPartido.jugador == jugador_id,
+            CompeticionTemporada.temporada.in_(temp_ids),
+        )
+        .group_by(CompeticionTemporada.temporada, TarjetaPartido.tipo)
+        .all()
+    )
 
     amarillas_map: dict[int, int] = {}
     rojas_map: dict[int, int] = {}
     for r in tarjetas_t:
-        if r.tipo == "amarilla": # La segunda amarilla (doble_amarilla) la considero una roja
+        if (
+            r.tipo == "amarilla"
+        ):  # La segunda amarilla (doble_amarilla) la considero una roja
             amarillas_map[r.temporada] = amarillas_map.get(r.temporada, 0) + r.n
         else:
             rojas_map[r.temporada] = rojas_map.get(r.temporada, 0) + r.n
@@ -417,8 +488,9 @@ def get_jugador_detalles(jugador_id: int, db: Session = Depends(get_db)):
             partidos_suplente=suplentes,
             tarjetas_amarillas=amarillas,
             tarjetas_rojas=rojas,
-        )
+        ),
     )
+
 
 @router.post("/", response_model=JugadorOut, status_code=status.HTTP_201_CREATED)
 def create_jugador(
@@ -453,7 +525,7 @@ def update_jugador(
 def delete_jugador(
     jugador_id: int,
     db: Session = Depends(get_db),
-    _: str = Depends(get_current_user_id),   # protegido
+    _: str = Depends(get_current_user_id),  # protegido
 ):
     jugador = db.get(Jugador, jugador_id)
     if not jugador:

@@ -21,6 +21,7 @@ from .jugadores import JugadorSimpleOut
 
 router = APIRouter()
 
+
 class PenaltiCreate(BaseModel):
     partido: int
     jugador: int
@@ -28,22 +29,33 @@ class PenaltiCreate(BaseModel):
     anotado: bool = True
     orden: int
 
+
 class PenaltiOut(PenaltiCreate):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     jugador_rel: JugadorSimpleOut | None
 
+
 @router.post("/", response_model=PenaltiOut, status_code=status.HTTP_201_CREATED)
-def create_penalti(data: PenaltiCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def create_penalti(
+    data: PenaltiCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     penalti = PenaltiTanda(**data.model_dump())
     db.add(penalti)
     db.commit()
     db.refresh(penalti)
     return penalti
 
+
 @router.delete("/{penalti_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_penalti(penalti_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def delete_penalti(
+    penalti_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     penalti = db.get(PenaltiTanda, penalti_id)
     if not penalti:
         raise HTTPException(status_code=404, detail="Penalti no encontrado")

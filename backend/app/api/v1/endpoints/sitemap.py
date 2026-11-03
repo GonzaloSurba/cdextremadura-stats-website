@@ -18,6 +18,7 @@ from app.models.models import Entrenador, Jugador, Partido
 
 router = APIRouter(tags=["Sitemap"])
 
+
 @router.get("/sitemap.xml", include_in_schema=False)
 def get_sitemap(db: Session = Depends(get_db)):
     domain = settings.DOMAIN
@@ -57,7 +58,11 @@ def get_sitemap(db: Session = Depends(get_db)):
 
     # 3. Partidos dinámicos
     for p in partidos:
-        lastmod = p.fecha.strftime("%Y-%m-%d") if p.fecha and p.fecha.date() <= fecha_hoy else ""
+        lastmod = (
+            p.fecha.strftime("%Y-%m-%d")
+            if p.fecha and p.fecha.date() <= fecha_hoy
+            else ""
+        )
         lastmod_tag = f"\n    <lastmod>{lastmod}</lastmod>" if lastmod else ""
         urls.append(f"""  <url>
     <loc>{base_url}/partido/{p.id}</loc>{lastmod_tag}

@@ -41,6 +41,7 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class EntrenadorBase(BaseModel):
     nombre: str = Field(max_length=255)
     apellidos: str = Field(max_length=255)
@@ -50,8 +51,10 @@ class EntrenadorBase(BaseModel):
     ruta_foto: str | None = Field(default=None, max_length=255)
     localidad_nacimiento: str | None = Field(default=None, max_length=255)
 
+
 class EntrenadorCreate(EntrenadorBase):
     pass
+
 
 class EntrenadorUpdate(BaseModel):
     nombre: str | None = Field(default=None, max_length=255)
@@ -62,10 +65,12 @@ class EntrenadorUpdate(BaseModel):
     ruta_foto: str | None = Field(default=None, max_length=255)
     localidad_nacimiento: str | None = Field(default=None, max_length=255)
 
+
 class EntrenadorOut(EntrenadorBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
 
 class EntrenadorHistoricoOut(EntrenadorOut):
     total_partidos: int
@@ -73,6 +78,7 @@ class EntrenadorHistoricoOut(EntrenadorOut):
     total_derrotas: int
     total_empates: int
     total_temporadas: int
+
 
 class TemporadaEntrenadorOut(BaseModel):
     temporada_id: int
@@ -82,6 +88,7 @@ class TemporadaEntrenadorOut(BaseModel):
     empates: int
     derrotas: int
 
+
 class EntrenadorDetalleOut(EntrenadorOut):
     total_partidos: int
     total_victorias: int
@@ -90,7 +97,9 @@ class EntrenadorDetalleOut(EntrenadorOut):
     total_temporadas: int
     temporadas: list[TemporadaEntrenadorOut]
 
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 
 @router.get("/", response_model=list[EntrenadorOut])
 def list_entrenadores(
@@ -230,7 +239,10 @@ def get_entrenador_detalles(entrenador_id: int, db: Session = Depends(get_db)):
     for _, temp in et_rows:
         partidos = (
             db.query(Partido)
-            .join(CompeticionTemporada, Partido.competicion_temporada == CompeticionTemporada.id)
+            .join(
+                CompeticionTemporada,
+                Partido.competicion_temporada == CompeticionTemporada.id,
+            )
             .filter(
                 Partido.estado == EstadoPartido.jugado,
                 CompeticionTemporada.temporada == temp.id,
@@ -244,24 +256,30 @@ def get_entrenador_detalles(entrenador_id: int, db: Session = Depends(get_db)):
 
         pj = len(partidos)
         wins = sum(
-            1 for p in partidos
-            if (p.entrenador_local == entrenador_id and p.goles_local > p.goles_visitante)
-            or (p.entrenador_visitante == entrenador_id and p.goles_visitante > p.goles_local)
+            1
+            for p in partidos
+            if (
+                p.entrenador_local == entrenador_id
+                and p.goles_local > p.goles_visitante
+            )
+            or (
+                p.entrenador_visitante == entrenador_id
+                and p.goles_visitante > p.goles_local
+            )
         )
-        draws = sum(
-            1 for p in partidos
-            if p.goles_local == p.goles_visitante
-        )
+        draws = sum(1 for p in partidos if p.goles_local == p.goles_visitante)
         losses = pj - wins - draws
 
-        temporadas_out.append(TemporadaEntrenadorOut(
-            temporada_id=temp.id,
-            temporada_nombre=temp.nombre,
-            partidos=pj,
-            victorias=wins,
-            empates=draws,
-            derrotas=losses,
-        ))
+        temporadas_out.append(
+            TemporadaEntrenadorOut(
+                temporada_id=temp.id,
+                temporada_nombre=temp.nombre,
+                partidos=pj,
+                victorias=wins,
+                empates=draws,
+                derrotas=losses,
+            )
+        )
 
         total_partidos += pj
         total_victorias += wins
@@ -298,7 +316,7 @@ def get_entrenador(entrenador_id: int, db: Session = Depends(get_db)):
 def create_entrenador(
     data: EntrenadorCreate,
     db: Session = Depends(get_db),
-    _: str = Depends(get_current_user_id),   # protegido
+    _: str = Depends(get_current_user_id),  # protegido
 ):
     entrenador = Entrenador(**data.model_dump())
     db.add(entrenador)
@@ -312,7 +330,7 @@ def update_entrenador(
     entrenador_id: int,
     data: EntrenadorUpdate,
     db: Session = Depends(get_db),
-    _: str = Depends(get_current_user_id),   # protegido
+    _: str = Depends(get_current_user_id),  # protegido
 ):
     entrenador = db.get(Entrenador, entrenador_id)
     if not entrenador:
@@ -327,7 +345,7 @@ def update_entrenador(
 def delete_entrenador(
     entrenador_id: int,
     db: Session = Depends(get_db),
-    _: str = Depends(get_current_user_id),   # protegido
+    _: str = Depends(get_current_user_id),  # protegido
 ):
     entrenador = db.get(Entrenador, entrenador_id)
     if not entrenador:

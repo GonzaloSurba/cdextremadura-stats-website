@@ -18,8 +18,10 @@ from .competiciones import CompeticionTemporadaOut
 
 router = APIRouter()
 
+
 class TrofeoCreate(BaseModel):
     competicion_temporada: int
+
 
 class TrofeoOut(TrofeoCreate):
     model_config = ConfigDict(from_attributes=True)
@@ -27,20 +29,29 @@ class TrofeoOut(TrofeoCreate):
     id: int
     competicion_temporada_rel: CompeticionTemporadaOut | None
 
+
 @router.get("/", response_model=list[TrofeoOut])
 def list_trofeos(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
     return db.query(Trofeo).offset(skip).limit(limit).all()
 
+
 @router.post("/", response_model=TrofeoOut, status_code=status.HTTP_201_CREATED)
-def create_trofeo(data: TrofeoCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def create_trofeo(
+    data: TrofeoCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     trofeo = Trofeo(**data.model_dump())
     db.add(trofeo)
     db.commit()
     db.refresh(trofeo)
     return trofeo
 
+
 @router.delete("/{trofeo_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_trofeo(trofeo_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+def delete_trofeo(
+    trofeo_id: int, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)
+):
     trofeo = db.get(Trofeo, trofeo_id)
     if not trofeo:
         raise HTTPException(status_code=404, detail="Trofeo no encontrado")

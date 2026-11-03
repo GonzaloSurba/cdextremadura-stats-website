@@ -37,6 +37,7 @@ router = APIRouter()
 
 # ── Schemas de respuesta ──────────────────────────────────────────────────────
 
+
 class ClasificacionEquipo(BaseModel):
     equipo_id: int
     equipo_nombre: str
@@ -51,6 +52,7 @@ class ClasificacionEquipo(BaseModel):
     dg: int
     pts: int
 
+
 class PosicionJugadorOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -58,6 +60,7 @@ class PosicionJugadorOut(BaseModel):
     nombre: str
     abreviacion: str
     es_posicion_principal: bool
+
 
 class EstadisticaJugador(BaseModel):
     jugador_id: int
@@ -78,9 +81,12 @@ class EstadisticaJugador(BaseModel):
 
 # ── Clasificación ─────────────────────────────────────────────────────────────
 
+
 @router.get("/clasificacion", response_model=list[ClasificacionEquipo])
 def get_clasificacion(
-    competicion_temporada_id: int = Query(..., description="ID de competicion_temporada"),
+    competicion_temporada_id: int = Query(
+        ..., description="ID de competicion_temporada"
+    ),
     db: Session = Depends(get_db),
 ):
     """
@@ -113,8 +119,12 @@ def get_clasificacion(
                 "equipo_nombre": nombre,
                 "abreviacion": abreviacion,
                 "nombre_corto": nombre_corto,
-                "pj": 0, "pg": 0, "pe": 0, "pp": 0,
-                "gf": 0, "gc": 0,
+                "pj": 0,
+                "pg": 0,
+                "pe": 0,
+                "pp": 0,
+                "gf": 0,
+                "gc": 0,
             }
 
     for p in partidos:
@@ -134,27 +144,27 @@ def get_clasificacion(
         gl = p.goles_local if p.goles_local is not None else 0
         gv = p.goles_visitante if p.goles_visitante is not None else 0
 
-        tabla[p.equipo_local]["pj"]     += 1
-        tabla[p.equipo_local]["gf"]     += gl
-        tabla[p.equipo_local]["gc"]     += gv
+        tabla[p.equipo_local]["pj"] += 1
+        tabla[p.equipo_local]["gf"] += gl
+        tabla[p.equipo_local]["gc"] += gv
         tabla[p.equipo_visitante]["pj"] += 1
         tabla[p.equipo_visitante]["gf"] += gv
         tabla[p.equipo_visitante]["gc"] += gl
 
         if gl > gv:
-            tabla[p.equipo_local]["pg"]     += 1
+            tabla[p.equipo_local]["pg"] += 1
             tabla[p.equipo_visitante]["pp"] += 1
         elif gl < gv:
             tabla[p.equipo_visitante]["pg"] += 1
-            tabla[p.equipo_local]["pp"]     += 1
+            tabla[p.equipo_local]["pp"] += 1
         else:
-            tabla[p.equipo_local]["pe"]     += 1
+            tabla[p.equipo_local]["pe"] += 1
             tabla[p.equipo_visitante]["pe"] += 1
 
     result = []
     for datos in tabla.values():
         pts = datos["pg"] * 3 + datos["pe"]
-        dg  = datos["gf"] - datos["gc"]
+        dg = datos["gf"] - datos["gc"]
         result.append(ClasificacionEquipo(**datos, dg=dg, pts=pts))
 
     # ── Desempate RFEF ────────────────────────────────────────────────────────
@@ -195,7 +205,9 @@ def get_clasificacion(
     result.sort(key=functools.cmp_to_key(comparar), reverse=True)
     return result
 
+
 # ── Estadísticas por jugador ──────────────────────────────────────────────────
+
 
 @router.get("/jugadores", response_model=list[EstadisticaJugador])
 def get_estadisticas_jugadores(
@@ -210,10 +222,16 @@ def get_estadisticas_jugadores(
     # Base de partidos según filtros
     partidos_query = db.query(Partido.id).filter(Partido.estado == EstadoPartido.jugado)
     if competicion_temporada_id:
-        partidos_query = partidos_query.filter(Partido.competicion_temporada == competicion_temporada_id)
+        partidos_query = partidos_query.filter(
+            Partido.competicion_temporada == competicion_temporada_id
+        )
     elif temporada_id:
-        ct_ids = db.query(CompeticionTemporada.id).filter(CompeticionTemporada.temporada == temporada_id)
-        partidos_query = partidos_query.filter(Partido.competicion_temporada.in_(ct_ids))
+        ct_ids = db.query(CompeticionTemporada.id).filter(
+            CompeticionTemporada.temporada == temporada_id
+        )
+        partidos_query = partidos_query.filter(
+            Partido.competicion_temporada.in_(ct_ids)
+        )
     partido_ids = [r[0] for r in partidos_query.all()]
 
     if not partido_ids:
@@ -231,7 +249,11 @@ def get_estadisticas_jugadores(
     # Penaltis por jugador
     penaltis_q = (
         db.query(GolPartido.anotador, func.count().label("penaltis"))
-        .filter(GolPartido.partido.in_(partido_ids), GolPartido.a_favor, GolPartido.tipo == "penalti")
+        .filter(
+            GolPartido.partido.in_(partido_ids),
+            GolPartido.a_favor,
+            GolPartido.tipo == "penalti",
+        )
         .group_by(GolPartido.anotador)
         .all()
     )
@@ -256,7 +278,9 @@ def get_estadisticas_jugadores(
     amarillas_map: dict[int, int] = {}
     rojas_map: dict[int, int] = {}
     for tar in tarjetas_q:
-        if tar.tipo == "amarilla": # La segunda amarilla (doble_amarilla) la considero una roja
+        if (
+            tar.tipo == "amarilla"
+        ):  # La segunda amarilla (doble_amarilla) la considero una roja
             amarillas_map[tar.jugador] = amarillas_map.get(tar.jugador, 0) + tar.n
         else:
             rojas_map[tar.jugador] = rojas_map.get(tar.jugador, 0) + tar.n
@@ -278,7 +302,7 @@ def get_estadisticas_jugadores(
         db.query(Alineacion.jugador, func.count().label("suplentes"))
         .filter(
             Alineacion.partido.in_(partido_ids),
-            ~Alineacion.titular, # Esto equivale a Alineacion.titular == False
+            ~Alineacion.titular,  # Esto equivale a Alineacion.titular == False
             Alineacion.minuto_entrada.isnot(None),
         )
         .group_by(Alineacion.jugador)
@@ -287,7 +311,14 @@ def get_estadisticas_jugadores(
     suplentes_map = {r.jugador: r.suplentes for r in suplentes_q}
 
     # Jugadores involucrados
-    jugador_ids = set(goles_map) | set(asist_map) | set(amarillas_map) | set(rojas_map) | set(titulares_map) | set(suplentes_map)
+    jugador_ids = (
+        set(goles_map)
+        | set(asist_map)
+        | set(amarillas_map)
+        | set(rojas_map)
+        | set(titulares_map)
+        | set(suplentes_map)
+    )
     jugadores = db.query(Jugador).filter(Jugador.id.in_(jugador_ids)).all()
 
     posiciones_q = (
@@ -296,7 +327,7 @@ def get_estadisticas_jugadores(
             Posicion.id,
             Posicion.nombre,
             Posicion.abreviacion,
-            JugadorPosicion.es_posicion_principal
+            JugadorPosicion.es_posicion_principal,
         )
         .join(Posicion, Posicion.id == JugadorPosicion.posicion)
         .filter(JugadorPosicion.jugador.in_(jugador_ids))
@@ -309,7 +340,7 @@ def get_estadisticas_jugadores(
             id=pos.id,
             nombre=pos.nombre,
             abreviacion=pos.abreviacion,
-            es_posicion_principal=pos.es_posicion_principal
+            es_posicion_principal=pos.es_posicion_principal,
         )
         if pos.jugador not in posiciones_map:
             posiciones_map[pos.jugador] = []
@@ -337,7 +368,9 @@ def get_estadisticas_jugadores(
     result.sort(key=lambda x: x.goles, reverse=True)
     return result
 
+
 # ── Estadísticas generales del equipo principal ──────────────────────────────────────────────────
+
 
 @router.get("/generales")
 def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db)):
@@ -346,67 +379,106 @@ def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db
     if not equipo_principal:
         raise HTTPException(
             status_code=404,
-            detail="No se ha configurado ningún equipo como 'equipo_principal'."
+            detail="No se ha configurado ningún equipo como 'equipo_principal'.",
         )
 
     eq_id = equipo_principal.id
 
     # 2. Construir las condiciones lógicas de victoria, empate y derrota
     # Caso A: El equipo principal juega en casa
-    victoria_local = and_(Partido.equipo_local == eq_id, or_(
-        Partido.goles_local > Partido.goles_visitante,
-        and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_local > Partido.penaltis_visitantes)
-    ))
+    victoria_local = and_(
+        Partido.equipo_local == eq_id,
+        or_(
+            Partido.goles_local > Partido.goles_visitante,
+            and_(
+                Partido.goles_local == Partido.goles_visitante,
+                Partido.penaltis_local > Partido.penaltis_visitantes,
+            ),
+        ),
+    )
 
-    derrota_local = and_(Partido.equipo_local == eq_id, or_(
-        Partido.goles_local < Partido.goles_visitante,
-        and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_local < Partido.penaltis_visitantes)
-    ))
+    derrota_local = and_(
+        Partido.equipo_local == eq_id,
+        or_(
+            Partido.goles_local < Partido.goles_visitante,
+            and_(
+                Partido.goles_local == Partido.goles_visitante,
+                Partido.penaltis_local < Partido.penaltis_visitantes,
+            ),
+        ),
+    )
 
     # Caso B: El equipo principal juega fuera
-    victoria_visitante = and_(Partido.equipo_visitante == eq_id, or_(
-        Partido.goles_visitante > Partido.goles_local,
-        and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_visitantes > Partido.penaltis_local)
-    ))
+    victoria_visitante = and_(
+        Partido.equipo_visitante == eq_id,
+        or_(
+            Partido.goles_visitante > Partido.goles_local,
+            and_(
+                Partido.goles_local == Partido.goles_visitante,
+                Partido.penaltis_visitantes > Partido.penaltis_local,
+            ),
+        ),
+    )
 
-    derrota_visitante = and_(Partido.equipo_visitante == eq_id, or_(
-        Partido.goles_visitante < Partido.goles_local,
-        and_(Partido.goles_local == Partido.goles_visitante, Partido.penaltis_visitantes < Partido.penaltis_local)
-    ))
+    derrota_visitante = and_(
+        Partido.equipo_visitante == eq_id,
+        or_(
+            Partido.goles_visitante < Partido.goles_local,
+            and_(
+                Partido.goles_local == Partido.goles_visitante,
+                Partido.penaltis_visitantes < Partido.penaltis_local,
+            ),
+        ),
+    )
 
     # El empate puro se da cuando los goles son iguales y no existió definición por penaltis
     empate = or_(
-        and_(Partido.equipo_local == eq_id, Partido.goles_local == Partido.goles_visitante, Partido.penaltis_local.is_(None)),
-        and_(Partido.equipo_visitante == eq_id, Partido.goles_local == Partido.goles_visitante, Partido.penaltis_visitantes.is_(None))
+        and_(
+            Partido.equipo_local == eq_id,
+            Partido.goles_local == Partido.goles_visitante,
+            Partido.penaltis_local.is_(None),
+        ),
+        and_(
+            Partido.equipo_visitante == eq_id,
+            Partido.goles_local == Partido.goles_visitante,
+            Partido.penaltis_visitantes.is_(None),
+        ),
     )
 
     # 3. Ejecutar una única consulta agregada (Agregación condicional con CASE)
     stats = (
         db.query(
             func.count(Partido.id).label("jugados"),
-            func.sum(case((or_(victoria_local, victoria_visitante), 1), else_=0)).label("ganados"),
+            func.sum(case((or_(victoria_local, victoria_visitante), 1), else_=0)).label(
+                "ganados"
+            ),
             func.sum(case((empate, 1), else_=0)).label("empatados"),
-            func.sum(case((or_(derrota_local, derrota_visitante), 1), else_=0)).label("perdidos")
+            func.sum(case((or_(derrota_local, derrota_visitante), 1), else_=0)).label(
+                "perdidos"
+            ),
         )
         .filter(
             Partido.estado == EstadoPartido.jugado,
-            or_(Partido.equipo_local == eq_id, Partido.equipo_visitante == eq_id)
+            or_(Partido.equipo_local == eq_id, Partido.equipo_visitante == eq_id),
         )
         .first()
     )
 
-    total_titulos = (
-        db.query(func.count(Trofeo.id)).scalar() or 0
-    )
+    total_titulos = db.query(func.count(Trofeo.id)).scalar() or 0
 
     total_ascensos = (
         db.query(func.count(CompeticionTemporada.id))
-        .filter(CompeticionTemporada.ascenso.is_(True)) # Cuando puede ser nulo, se usa .is_()
-        .scalar() or 0
+        .filter(
+            CompeticionTemporada.ascenso.is_(True)
+        )  # Cuando puede ser nulo, se usa .is_()
+        .scalar()
+        or 0
     )
 
     if stats is None:
-        raise HTTPException(status_code=500, detail="No se pudieron calcular las estadísticas")
+        raise HTTPException(
+            status_code=500, detail="No se pudieron calcular las estadísticas"
+        )
 
     # 4. Formatear la respuesta mapeando valores nulos a 0 (por si no hay partidos disputados aún)
     return {
@@ -416,5 +488,5 @@ def obtener_estadisticas_generales_equipo_principal(db: Session = Depends(get_db
         "partidos_empatados": int(stats.empatados or 0),
         "partidos_perdidos": int(stats.perdidos or 0),
         "total_titulos": total_titulos,
-        "total_ascensos": total_ascensos
+        "total_ascensos": total_ascensos,
     }

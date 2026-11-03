@@ -23,12 +23,14 @@ from .jugadores import JugadorSimpleOut
 
 router = APIRouter()
 
+
 class AlineacionCreate(BaseModel):
     jugador: int
     partido: int
     titular: bool = False
     minuto_entrada: int | None = None
     minuto_salida: int | None = None
+
 
 class AlineacionOut(AlineacionCreate):
     model_config = ConfigDict(from_attributes=True)
@@ -37,18 +39,25 @@ class AlineacionOut(AlineacionCreate):
     jugador_rel: JugadorSimpleOut
     dorsal: int | None = None
 
+
 class AlineacionUpdate(BaseModel):
     titular: bool | None = None
     minuto_entrada: int | None = None
     minuto_salida: int | None = None
 
-@router.post('/', response_model=AlineacionOut, status_code=status.HTTP_201_CREATED)
-def create_alineacion(data: AlineacionCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user_id)):
+
+@router.post("/", response_model=AlineacionOut, status_code=status.HTTP_201_CREATED)
+def create_alineacion(
+    data: AlineacionCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user_id),
+):
     alineacion = Alineacion(**data.model_dump())
     db.add(alineacion)
     db.commit()
     db.refresh(alineacion)
     return alineacion
+
 
 @router.patch("/por-jugador", response_model=AlineacionOut)
 def update_alineacion_por_jugador(

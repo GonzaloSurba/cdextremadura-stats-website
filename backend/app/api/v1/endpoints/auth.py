@@ -24,6 +24,7 @@ router = APIRouter()
 ADMIN_USERNAME = settings.ADMIN_USERNAME
 ADMIN_PASSWORD_HASH = settings.ADMIN_PASSWORD_HASH
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -37,7 +38,9 @@ class TokenResponse(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
 def login(request: Request, data: LoginRequest):
-    if data.username != ADMIN_USERNAME or not verify_password(data.password, ADMIN_PASSWORD_HASH):
+    if data.username != ADMIN_USERNAME or not verify_password(
+        data.password, ADMIN_PASSWORD_HASH
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas",

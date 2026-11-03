@@ -38,20 +38,28 @@ from app.api.v1.endpoints import (
 api_router = APIRouter()
 
 # Autenticación (pública)
-api_router.include_router(auth.router,          prefix="/auth",          tags=["Auth"])
+api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 # Recursos principales (lectura pública, escritura protegida)
-api_router.include_router(jugadores.router,     prefix="/jugadores",     tags=["Jugadores"])
-api_router.include_router(equipos.router,       prefix="/equipos",       tags=["Equipos"])
-api_router.include_router(temporadas.router,    prefix="/temporadas",    tags=["Temporadas"])
-api_router.include_router(competiciones.router, prefix="/competiciones", tags=["Competiciones"])
-api_router.include_router(partidos.router,      prefix="/partidos",      tags=["Partidos"])
-api_router.include_router(alineaciones.router,  prefix="/alineaciones",  tags=["Alineaciones"])
-api_router.include_router(goles.router,         prefix="/goles",         tags=["Goles"])
-api_router.include_router(tarjetas.router,      prefix="/tarjetas",      tags=["Tarjetas"])
-api_router.include_router(entrenadores.router,  prefix="/entrenadores",  tags=["Entrenadores"])
-api_router.include_router(penaltis.router,      prefix="/penaltis",      tags=["Penaltis"])
-api_router.include_router(trofeos.router,       prefix="/trofeos",       tags=["Trofeos"])
+api_router.include_router(jugadores.router, prefix="/jugadores", tags=["Jugadores"])
+api_router.include_router(equipos.router, prefix="/equipos", tags=["Equipos"])
+api_router.include_router(temporadas.router, prefix="/temporadas", tags=["Temporadas"])
+api_router.include_router(
+    competiciones.router, prefix="/competiciones", tags=["Competiciones"]
+)
+api_router.include_router(partidos.router, prefix="/partidos", tags=["Partidos"])
+api_router.include_router(
+    alineaciones.router, prefix="/alineaciones", tags=["Alineaciones"]
+)
+api_router.include_router(goles.router, prefix="/goles", tags=["Goles"])
+api_router.include_router(tarjetas.router, prefix="/tarjetas", tags=["Tarjetas"])
+api_router.include_router(
+    entrenadores.router, prefix="/entrenadores", tags=["Entrenadores"]
+)
+api_router.include_router(penaltis.router, prefix="/penaltis", tags=["Penaltis"])
+api_router.include_router(trofeos.router, prefix="/trofeos", tags=["Trofeos"])
 
 # Estadísticas calculadas dinámicamente
-api_router.include_router(estadisticas.router,  prefix="/estadisticas",  tags=["Estadísticas"])
+api_router.include_router(
+    estadisticas.router, prefix="/estadisticas", tags=["Estadísticas"]
+)

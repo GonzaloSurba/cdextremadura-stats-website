@@ -17,9 +17,9 @@ from app.core.config import settings
 # engine - Crea el pool de conexiones MySQL.
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True,      # detecta conexiones caídas
-    pool_recycle=3600,       # recicla conexiones cada hora
-    echo=False,              # pon True para ver las queries en desarrollo
+    pool_pre_ping=True,  # detecta conexiones caídas
+    pool_recycle=3600,  # recicla conexiones cada hora
+    echo=False,  # pon True para ver las queries en desarrollo
 )
 
 """

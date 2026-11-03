@@ -28,7 +28,9 @@ def apply_updates(obj: object, data: BaseModel) -> None:
     try:
         mapper = inspect(type(obj))
     except NoInspectionAvailable as exc:
-        raise RuntimeError(f"{type(obj).__name__} no es un modelo de SQLAlchemy") from exc
+        raise RuntimeError(
+            f"{type(obj).__name__} no es un modelo de SQLAlchemy"
+        ) from exc
 
     if not isinstance(mapper, Mapper):
         raise RuntimeError(f"{type(obj).__name__} no es un modelo de SQLAlchemy")
@@ -46,7 +48,7 @@ def apply_updates(obj: object, data: BaseModel) -> None:
         if value is None and not col.nullable:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail=f"El campo '{field}' no puede ser null"
+                detail=f"El campo '{field}' no puede ser null",
             )
 
     # Asigno los campos
