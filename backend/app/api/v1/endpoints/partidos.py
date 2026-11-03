@@ -217,6 +217,12 @@ def create_partido(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user_id),
 ):
+    if data.equipo_local == data.equipo_visitante:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="'equipo_local' y 'equipo_visitante' no pueden ser el mismo",
+        )
+
     partido = Partido(**data.model_dump())
     db.add(partido)
     db.commit()

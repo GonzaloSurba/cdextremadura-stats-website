@@ -6,15 +6,17 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
+import logging
 from typing import cast
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqlalchemy.exc import IntegrityError
 
 from app.api.v1.endpoints.sitemap import router as sitemap_router
 from app.core.config import settings
@@ -25,12 +27,30 @@ app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
 app.state.limiter = limiter
 
+logger = logging.getLogger(__name__)
+
 
 def _handle_rate_limit(request: Request, exc: Exception) -> Response:
     return _rate_limit_exceeded_handler(request, cast(RateLimitExceeded, exc))
 
 
 app.add_exception_handler(RateLimitExceeded, _handle_rate_limit)
+
+
+def _handle_integrity_error(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "IntegrityError en %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": "Conflicto con datos existentes o referencias inválidas"},
+    )
+
+
+app.add_exception_handler(IntegrityError, _handle_integrity_error)
 
 origins = [
     "http://localhost:5173",
