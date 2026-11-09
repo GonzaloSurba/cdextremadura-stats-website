@@ -7,7 +7,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { entrenadoresApi } from '../services/api';
 import Loader from '../components/Loader/Loader';
@@ -247,8 +247,9 @@ export default function Entrenadores() {
                                             <span className={`font-display-xl text-lg ${criterioOrden === 'temporadas' ? 'text-primary' : 'text-secondary'}`}>
                                                 {entrenador.total_temporadas || 0}
                                             </span>
-                                            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider" aria-label="Temporadas">
-                                                Temp.
+                                            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">
+                                                <span className="sr-only">Temporadas</span>
+                                                <span aria-hidden="true">Temp.</span>
                                             </span>
                                         </div>
 
@@ -280,6 +281,7 @@ export default function Entrenadores() {
                     {totalEntrenadores > ELEMENTOS_POR_PAGINA && (
                         <div className="flex items-center justify-center gap-xs pt-xl border-t border-outline-variant/60">
                             <button
+                                type="button"
                                 onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
                                 disabled={paginaActual === 1}
                                 aria-label="Página anterior"
@@ -293,6 +295,7 @@ export default function Entrenadores() {
                                     ? <span key={item} className="px-2 text-gray-500">...</span>
                                     : <button
                                         key={item}
+                                        type="button"
                                         onClick={() => setPaginaActual(item)}
                                         aria-current={paginaActual === item ? 'page' : undefined}
                                         aria-label={`Ir a página ${item}`}
@@ -306,6 +309,7 @@ export default function Entrenadores() {
                             )}
 
                             <button
+                                type="button"
                                 onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
                                 disabled={paginaActual === totalPaginas}
                                 aria-label="Página siguiente"

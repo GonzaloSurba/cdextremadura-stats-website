@@ -17,6 +17,7 @@ export default function PenaltiMatchGoal(props) {
             viewBox="0 0 973 803.967"
             {...props}
         >
+            <title>Icono de gol de penalti</title>
             <g
                 style={{
                     display: "inline",

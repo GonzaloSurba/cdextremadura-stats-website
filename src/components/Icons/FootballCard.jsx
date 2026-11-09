@@ -18,6 +18,7 @@ export default function FootballCard(props) {
             aria-hidden={true}
             {...props}
         >
+            <title>Icono de tarjeta {props.fillcard}</title>
             <path
                 d="m46.782 109.158 131.435 325.246 227.784-93.564L271.225 8.91Z"
                 style={{

@@ -23,6 +23,7 @@ export default function Stadium(props) {
             aria-hidden={true}
             {...props}
         >
+            <title>Icono de campo de fútbol</title>
             <path fill="#4caf50" d="M85.333 213.333h853.334v597.334H85.333z" />
             <path fill="#a5d6a7" d="M490.667 213.333h42.666v597.334h-42.666z" />
             <path

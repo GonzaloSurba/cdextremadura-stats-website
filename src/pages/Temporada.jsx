@@ -7,7 +7,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { competicionesApi, partidosApi, clasificacionApi, estadisticasJugadoresApi } from '../services/api';
 import Loader from '../components/Loader/Loader';
 import ListaPartidos from '../components/ListaPartidos';
@@ -39,8 +39,8 @@ export default function Temporada() {
                 setTemporadas(data);
                 if (data.length > 0) {
                     // Por defecto selecciono la liga más reciente
-                    let ligas = data.filter(comp => comp?.competicion_rel?.tipo === "liga");
-                    let liga_mas_reciente = ligas.at(-1) ?? data.at(-1) ?? data[0];
+                    const ligas = data.filter(comp => comp?.competicion_rel?.tipo === "liga");
+                    const liga_mas_reciente = ligas.at(-1) ?? data.at(-1) ?? data[0];
                     setTempSeleccionada(liga_mas_reciente.id);
                 } else {
                     throw new Error("No se ha obtenido ninguna temporada");
@@ -218,6 +218,7 @@ export default function Temporada() {
                                 <div className="flex gap-sm p-xs bg-surface-variant/20 rounded-2xl w-fit min-w-max">
                                     {tipoCompeticion === "liga" && (
                                         <button
+                                            type="button"
                                             onClick={() => setTabActual("clasificacion")}
                                             className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabActual === 'clasificacion' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
                                         >
@@ -225,12 +226,14 @@ export default function Temporada() {
                                         </button>
                                     )}
                                     <button
+                                        type="button"
                                         onClick={() => setTabActual("partidos")}
                                         className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabActual === 'partidos' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
                                     >
                                         <BsCalendar3 aria-hidden="true" /> Partidos
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => setTabActual("stats")}
                                         className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabActual === 'stats' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
                                     >

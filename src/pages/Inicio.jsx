@@ -150,7 +150,10 @@ const Home = () => {
                                     </p>
                                     <div className="pt-md">
                                         <NavLink to="/temporadas">
-                                            <button className="bg-white text-secondary px-xl py-md rounded-full font-bold uppercase tracking-wider hover:bg-primary-container transition-all shadow-lg flex items-center gap-sm mx-auto cursor-pointer">
+                                            <button
+                                                type="button"
+                                                className="bg-white text-secondary px-xl py-md rounded-full font-bold uppercase tracking-wider hover:bg-primary-container transition-all shadow-lg flex items-center gap-sm mx-auto cursor-pointer"
+                                            >
                                                 Explorar Temporadas <BsChevronRight aria-hidden="true" />
                                             </button>
                                         </NavLink>

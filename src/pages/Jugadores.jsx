@@ -7,7 +7,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { jugadoresApi } from '../services/api';
 import Loader from '../components/Loader/Loader';
 import CountryFlag from '../components/CountryFlag';
@@ -274,15 +274,15 @@ export default function JugadoresHistoricos() {
                                                         {nombreMostrar}
                                                     </h2>
                                                     <div className="flex flex-col gap-xs mt-0.5">
-                                                        <span className="flex items-center gap-xs text-xs text-gray-500 truncate" aria-label='Localidad natal'>
-                                                            <IoLocationOutline size={20} />
+                                                        <span className="flex items-center gap-xs text-xs text-gray-500 truncate">
+                                                            <IoLocationOutline size={20} aria-hidden="true" />
                                                             {jugador.localidad_nacimiento ? jugador.pais_nacimiento
                                                                 ? `${jugador.localidad_nacimiento}, ${jugador.pais_nacimiento}`
                                                                 : jugador.localidad_nacimiento
                                                                 : 'Desconocida'}
                                                         </span>
                                                         {jugador.nacionalidad && (
-                                                            <span className="flex items-center text-xs gap-xs text-gray-500 truncate" aria-label='Nacionalidad'>
+                                                            <span className="flex items-center text-xs gap-xs text-gray-500 truncate">
                                                                 <CountryFlag pais={jugador.nacionalidad} />
                                                                 {jugador.nacionalidad}
                                                             </span>
@@ -338,6 +338,7 @@ export default function JugadoresHistoricos() {
                                 <div className="flex items-center justify-center gap-xs pt-xl border-t border-outline-variant/60">
                                     {/* Botón Anterior */}
                                     <button
+                                        type="button"
                                         onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
                                         disabled={paginaActual === 1}
                                         aria-label="Página anterior"
@@ -352,6 +353,7 @@ export default function JugadoresHistoricos() {
                                             ? <span key={item} className="px-2 text-gray-500">...</span>
                                             : <button
                                                 key={item}
+                                                type="button"
                                                 onClick={() => setPaginaActual(item)}
                                                 aria-current={paginaActual === item ? 'page' : undefined}
                                                 aria-label={`Ir a página ${item}`}
@@ -366,6 +368,7 @@ export default function JugadoresHistoricos() {
 
                                     {/* Botón Siguiente */}
                                     <button
+                                        type="button"
                                         onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
                                         disabled={paginaActual === totalPaginas}
                                         aria-label="Página siguiente"

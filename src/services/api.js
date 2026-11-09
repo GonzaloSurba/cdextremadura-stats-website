@@ -20,7 +20,7 @@ async function request(path, options = {}, auth = false) {
 
     if (auth) {
         const token = getToken()
-        if (token) headers['Authorization'] = `Bearer ${token}`
+        if (token) headers.Authorization = `Bearer ${token}`
     }
 
     const controller = new AbortController()

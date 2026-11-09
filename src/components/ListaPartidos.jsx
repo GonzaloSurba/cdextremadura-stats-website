@@ -16,7 +16,7 @@ function obtenerNombreRonda(jornadaNum, competicionTemporadaRel) {
     const esCopa = competicion_rel?.tipo === "copa";
     
     // Si no es copa o no tenemos el total de rondas, usamos el formato estándar
-    if (!esCopa || !num_jornadas || isNaN(jornadaNum)) {
+    if (!esCopa || !num_jornadas || Number.isNaN(jornadaNum)) {
         return `Jornada ${jornadaNum}`;
     }
 

@@ -7,7 +7,6 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import React from 'react';
 import { BsEnvelopeAt, BsInfoCircle } from "react-icons/bs";
 import { Helmet } from 'react-helmet-async';
 

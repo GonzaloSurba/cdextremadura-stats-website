@@ -42,7 +42,7 @@ export default function Navbar() {
                 <div className="flex justify-between items-center w-full px-lg py-md max-w-container-max mx-auto">
                     <NavLink to="/" className="flex items-center gap-md shrink-0">
                         <div>
-                            <img src={escudo} alt="Escudo del Club Deportivo Extremadura" className="w-20 h-auto" loading="lazy" />
+                            <img src={escudo} alt="Escudo del Club Deportivo Extremadura" className="w-20 h-auto" width={300} height={300} />
                         </div>
                         <div>
                             <div className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-secondary">EXTREMADURA STATS</div>
@@ -65,7 +65,7 @@ export default function Navbar() {
             {/* Menú móvil */}
             <nav className="bg-surface/80 backdrop-blur-xl top-0 sticky z-50 border-b border-outline-variant shadow-sm px-md py-sm flex items-center justify-between md:hidden">
                 <NavLink to="/" className="flex items-center gap-sm rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                    <img src={escudo} alt="Escudo del club" className="w-12 h-auto" loading="lazy" />
+                    <img src={escudo} alt="Escudo del club" className="w-12 h-auto" width={300} height={300} />
                     <div>
                         <div className="font-display-xl text-sm uppercase tracking-tighter text-secondary font-bold">EXTREMADURA STATS</div>
                         <div className="text-[10px] text-gray-400">Web no oficial</div>
@@ -75,6 +75,7 @@ export default function Navbar() {
                 {/* Botón Hamburguesa */}
                 <button
                     onClick={() => setMenuAbierto(!menuAbierto)}
+                    type="button"
                     aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
                     aria-expanded={menuAbierto}
                     className="p-xs rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -99,6 +100,7 @@ export default function Navbar() {
                 <div>
                     <div className="flex justify-end mb-lg">
                         <button
+                            type="button"
                             onClick={() => setMenuAbierto(false)} aria-label="Cerrar menú"
                             className="p-xs text-secondary hover:text-primary transition-colors"
                         >

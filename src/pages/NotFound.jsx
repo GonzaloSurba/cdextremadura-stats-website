@@ -42,6 +42,8 @@ export default function NotFound() {
                         src={escudo}
                         alt="Escudo del Club Deportivo Extremadura"
                         className="w-36 h-auto relative z-10 opacity-20 grayscale contrast-125 select-none pointer-events-none"
+                        width={300}
+                        height={300}
                         loading="lazy"
                     />
                 </div>
@@ -60,7 +62,9 @@ export default function NotFound() {
 
                 <div>
                     <Link to="/">
-                        <button className="border border-outline-variant bg-surface text-secondary px-xl py-md rounded-full font-bold uppercase text-xs tracking-wider hover:bg-surface-variant/20 hover:border-primary/40 transition-all shadow-sm flex items-center gap-sm mx-auto cursor-pointer group active:scale-95">
+                        <button
+                            type="button"
+                            className="border border-outline-variant bg-surface text-secondary px-xl py-md rounded-full font-bold uppercase text-xs tracking-wider hover:bg-surface-variant/20 hover:border-primary/40 transition-all shadow-sm flex items-center gap-sm mx-auto cursor-pointer group active:scale-95">
                             <BsArrowLeft aria-hidden="true" className="group-hover:-translate-x-1 transition-transform" />
                             Volver al inicio
                         </button>

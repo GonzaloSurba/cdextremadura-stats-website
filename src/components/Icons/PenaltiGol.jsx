@@ -18,7 +18,7 @@ export default function PenaltiGol(props) {
             aria-hidden={true}
             {...props}
         >
-            <title />
+            <title>Icono de penalti marcado en una tanda</title>
             <path d="M100 15a85 85 0 1 0 85 85 84.93 84.93 0 0 0-85-85m0 150a65 65 0 1 1 65-65 64.87 64.87 0 0 1-65 65m25-91.5-29 35L76 94c-4.5-3.5-10.5-2.5-14 2s-2.5 10.5 2 14c6 4.5 12.5 9 18.5 13.5 4.5 3 8.5 7.5 14 8 1.5 0 3.5 0 5-1l3-3 22.5-27c4-5 8-9.5 12-14.5 3-4 4-9 .5-13l-1.5-1.5c-3.5-2.5-9.5-2-13 2" />
         </svg>
     )

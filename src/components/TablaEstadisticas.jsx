@@ -37,7 +37,7 @@ export default function TablaEstadisticas({ titulo, columnas, datos }) {
                     </tr>
                 </thead>
                 <tbody className="text-sm">
-                    {datos.slice(0, 5).map((fila, i) => ( // Mostramos top 5
+                    {datos.slice(0, 5).map((fila) => ( // Mostramos top 5
                         <tr key={fila.id} className="border-b border-outline-variant/30 last:border-0 hover:bg-primary/5 transition-colors">
                             {Object.entries(fila)
                                 .filter(([key]) => key !== "id")

@@ -7,7 +7,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { competicionesApi } from '../services/api';
 import Loader from '../components/Loader/Loader';
 import { BsTrophy, BsAward } from "react-icons/bs";

@@ -7,11 +7,10 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { jugadoresApi } from '../services/api';
 import Loader from '../components/Loader/Loader';
-import { BsPersonBadge, BsSquareFill } from "react-icons/bs";
 import FootballBall from '../components/Icons/FootballBall';
 import Stadium from '../components/Icons/Stadium';
 import FootballCard from '../components/Icons/FootballCard';
