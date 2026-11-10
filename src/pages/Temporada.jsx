@@ -7,89 +7,122 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
-import { useState, useEffect, useMemo } from 'react';
-import { competicionesApi, partidosApi, clasificacionApi, estadisticasJugadoresApi } from '../services/api';
-import Loader from '../components/Loader/Loader';
-import ListaPartidos from '../components/ListaPartidos';
-import TablaEstadisticas from '../components/TablaEstadisticas';
-import TablaClasificacion from '../components/TablaClasificacion';
-import { BsTrophy, BsCalendar3, BsFilter } from "react-icons/bs";
+import { useEffect, useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { BsCalendar3, BsFilter, BsTrophy } from "react-icons/bs";
 import { MdQueryStats } from "react-icons/md";
 import FootballCard from '../components/Icons/FootballCard';
-import { Helmet } from 'react-helmet-async';
+import ListaPartidos from '../components/ListaPartidos';
+import Loader from '../components/Loader/Loader';
+import TablaClasificacion from '../components/TablaClasificacion';
+import TablaEstadisticas from '../components/TablaEstadisticas';
+import { clasificacionApi, competicionesApi, estadisticasJugadoresApi, partidosApi } from '../services/api';
 
-const getNombreCorto = (j) => j.nombre_conocido || `${j.nombre} ${j.apellidos.split(' ')[0] ?? ''}`;
+const getNombreCorto = (j) => j.nombre_conocido || `${j.nombre} ${j.apellidos?.split(' ')[0]?.trim() ?? ''}`.trim();
+
+function MensajeError({ mensaje }) {
+    return (
+        <p className="text-center py-xl text-red-500" role="alert">{mensaje}</p>
+    )
+}
 
 export default function Temporada() {
     const [temporadas, setTemporadas] = useState([]);
-    const [tempSeleccionada, setTempSeleccionada] = useState("");
+    const [tempSeleccionada, setTempSeleccionada] = useState(null);
+    const [compElegida, setCompElegida] = useState(null);
     const [partidos, setPartidos] = useState([]);
     const [clasificacion, setClasificacion] = useState([])
     const [estadisticas, setEstadisticas] = useState([]);
     const [tabActual, setTabActual] = useState("clasificacion");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [loadingInicial, setLoadingInicial] = useState(true);
+    const [loadingDatos, setLoadingDatos] = useState(true);
+    const [errorInicial, setErrorInicial] = useState(null);
+    const [errorDatos, setErrorDatos] = useState(null);
 
-    // 1. Cargar la lista de temporadas al inicio
+    // Cargo la lista de temporadas al inicio
     useEffect(() => {
         const cargarInicial = async () => {
-            setLoading(true);
             try {
                 const data = await competicionesApi.listTemporadas();
-                setTemporadas(data);
-                if (data.length > 0) {
-                    // Por defecto selecciono la liga más reciente
-                    const ligas = data.filter(comp => comp?.competicion_rel?.tipo === "liga");
-                    const liga_mas_reciente = ligas.at(-1) ?? data.at(-1) ?? data[0];
-                    setTempSeleccionada(liga_mas_reciente.id);
-                } else {
+                
+                if (data.length === 0) {
                     throw new Error("No se ha obtenido ninguna temporada");
                 }
+
+                // Agrupo las competiciones por temporada
+                const dictCompsPorTemp = Object.groupBy(data, (comp) => comp?.temporada_rel?.id);
+                const listaPorTemporadas = Object.values(dictCompsPorTemp).map((competiciones) => ({
+                    temporada: competiciones[0]?.temporada_rel,
+                    competiciones
+                })).sort((a, b) => (b?.temporada?.fecha_inicio ?? "").localeCompare(a?.temporada?.fecha_inicio ?? ""));
+                setTemporadas(listaPorTemporadas);
+
+                // Por defecto selecciono la temporada más reciente
+                const { temporada } = listaPorTemporadas[0];
+                setTempSeleccionada(temporada.id);
             } catch (err) {
                 console.error(err);
-                setError("Se ha producido un error al cargar las temporadas");
-                setLoading(false);
+                setErrorInicial("Se ha producido un error al cargar las temporadas");
+            } finally {
+                setLoadingInicial(false);
             }
         };
         cargarInicial();
     }, []);
     
-    // 2. Cargar partidos cada vez que cambie la temporada seleccionada
+    // Cargo las competiciones de la temporada seleccionada
+    const competicionesTemp = useMemo(() => {
+        const temporadaSel = temporadas.find(({ temporada }) => temporada?.id === tempSeleccionada);
+        return temporadaSel?.competiciones ?? [];
+    }, [temporadas, tempSeleccionada]);
+
+    // Compruebo que la competición elegida exista o si no elijo la primera liga o primera competición que encuentre
+    const compSeleccionada = useMemo(() => {
+        if (competicionesTemp.some((comp) => comp?.id === compElegida)) return compElegida;
+        const liga = competicionesTemp.find((comp) => comp?.competicion_rel?.tipo === "liga") ?? competicionesTemp[0];
+        return liga?.id ?? "";
+    }, [competicionesTemp, compElegida]);
+
+    // Cargo los partidos cada vez que cambie la competición seleccionada
     useEffect(() => {
-        if (!tempSeleccionada) return;
+        if (!compSeleccionada) return;
+        let ignore = false; // Con el ignore evito sobrescribir peticiones si se piden varias demasiado rápido
 
         const cargarDatosTemporada = async () => {
-            setLoading(true);
+            setLoadingDatos(true);
+            setErrorDatos(null);
             try {
                 const [dataPartidos, clasificacion, dataEstadisticas] = await Promise.all([
-                    partidosApi.list(tempSeleccionada),
-                    clasificacionApi.getByTemporada(tempSeleccionada),
-                    estadisticasJugadoresApi.getByFilters({ competicion_temporada_id: tempSeleccionada })
+                    partidosApi.list(compSeleccionada),
+                    clasificacionApi.getByTemporada(compSeleccionada),
+                    estadisticasJugadoresApi.getByFilters({ competicion_temporada_id: compSeleccionada })
                 ])
+                if (ignore) return;
                 setPartidos(dataPartidos);
                 setClasificacion(clasificacion);
                 setEstadisticas(dataEstadisticas);
             } catch (err) {
-                console.error(err);
-                setError("Se ha producido un error al cargar los partidos");
+                if (!ignore) {
+                    console.error(err);
+                    setErrorDatos("Se ha producido un error al cargar los datos de la competición");
+                }
             } finally {
-                setLoading(false);
+                if (!ignore) {
+                    setLoadingDatos(false);
+                }
             }
         };
         cargarDatosTemporada();
-    }, [tempSeleccionada]);
+        return () => { ignore = true; };
+    }, [compSeleccionada]);
 
-    const tipoCompeticion = useMemo(() => {
-        const temp = temporadas.find(t => t.id === tempSeleccionada);
-        return temp?.competicion_rel?.tipo ?? null;
-    }, [temporadas, tempSeleccionada]);
+    const competicionObj =
+        competicionesTemp.find((comp) => comp?.id === compSeleccionada) ?? null;
 
-    useEffect(() => {
-        if (tipoCompeticion === null) return;
-        if (tipoCompeticion !== "liga" && tabActual === "clasificacion") {
-            setTabActual("partidos");
-        }
-    }, [tipoCompeticion, tabActual]);
+    const tipoCompeticion = competicionObj?.competicion_rel?.tipo ?? null;
+
+    const tabEfectivo =
+        tipoCompeticion !== "liga" && tabActual === "clasificacion" ? "partidos" : tabActual;
 
     const statsData = useMemo(() => ({
         goleadores: estadisticas
@@ -179,110 +212,124 @@ export default function Temporada() {
                 </script>
             </Helmet>
 
-            {loading ? (
-                <Loader />
-            ) : error ? (
-                <p className="text-center py-xl text-red-500" role="alert">{error}</p>
-            ) : (
-                (() => {
-                    return (
-                        <div className="max-w-6xl mx-auto px-lg py-xl space-y-lg overflow-x-hidden">
+            {loadingInicial ? <Loader />
+                : errorInicial ? <MensajeError mensaje={errorInicial} />
+                : <div className="max-w-6xl mx-auto px-lg py-xl space-y-lg overflow-x-hidden">
 
-                            {/* CABECERA Y SELECTOR */}
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-md border-b border-outline-variant pb-lg">
-                                <div>
-                                    <h1 className="font-display-xl text-4xl uppercase tracking-tighter text-secondary wrap-break-word">
-                                        {temporadas.find(t => t.id === tempSeleccionada)?.nombre || "Temporada no seleccionada"}
-                                    </h1>
-                                    <p className="text-on-surface-variant">Resultados y clasificación detallada</p>
-                                </div>
+                    {/* CABECERA Y SELECTOR */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-md border-b border-outline-variant pb-lg">
+                        <div className="md:max-w-1/2">
+                            <h1 className="font-display-xl text-4xl uppercase tracking-tighter text-secondary wrap-break-word">
+                                {competicionObj?.nombre || "Competición no seleccionada"}
+                            </h1>
+                            <p className="text-on-surface-variant">Resultados y clasificación detallada</p>
+                        </div>
 
-                                <div className="flex items-center gap-sm bg-surface border border-outline-variant p-xs rounded-xl shadow-sm min-w-0 focus-within:ring-2 focus-within:ring-primary">
-                                    <BsFilter className="ml-sm text-gray-400 shrink-0" aria-hidden="true" />
-                                    <select
-                                        id="temporada-select"
-                                        aria-label="Seleccionar temporada"
-                                        value={tempSeleccionada}
-                                        onChange={(e) => setTempSeleccionada(Number(e.target.value))}
-                                        className="bg-transparent font-bold py-sm pr-lg focus:outline-none cursor-pointer min-w-0 w-full truncate"
-                                    >
-                                        {temporadas.map(t => (
-                                            <option key={t.id} value={t.id}>{t.nombre}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-sm">
+                            <div className="flex items-center gap-sm bg-surface border border-outline-variant p-xs rounded-xl shadow-sm min-w-0 md:w-40 focus-within:ring-2 focus-within:ring-primary">
+                                <BsFilter className="ml-sm text-gray-400 shrink-0" aria-hidden="true" />
+                                <select
+                                    id="temporada-select"
+                                    aria-label="Seleccionar temporada"
+                                    value={tempSeleccionada ?? ""}
+                                    onChange={(e) => {
+                                        setTempSeleccionada(Number(e.target.value));
+                                        setCompElegida(null);
+                                    }}
+                                    className="bg-transparent font-bold py-sm pr-lg focus:outline-none cursor-pointer min-w-0 w-full truncate"
+                                >
+                                    {temporadas.map(({temporada}) => (
+                                        <option key={temporada?.id} value={temporada?.id}>{temporada?.nombre}</option>
+                                    ))}
+                                </select>
                             </div>
-
-                            {/* TABS DE NAVEGACIÓN */}
-                            <div className="overflow-x-auto">
-                                <div className="flex gap-sm p-xs bg-surface-variant/20 rounded-2xl w-fit min-w-max">
-                                    {tipoCompeticion === "liga" && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setTabActual("clasificacion")}
-                                            className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabActual === 'clasificacion' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
-                                        >
-                                            <BsTrophy aria-hidden="true" /> Clasificación
-                                        </button>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={() => setTabActual("partidos")}
-                                        className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabActual === 'partidos' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
-                                    >
-                                        <BsCalendar3 aria-hidden="true" /> Partidos
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setTabActual("stats")}
-                                        className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabActual === 'stats' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
-                                    >
-                                        <MdQueryStats aria-hidden="true" /> Estadísticas
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* CONTENIDO PRINCIPAL */}
-                            <div className="relative min-h-100">
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    {tabActual === "clasificacion" && tipoCompeticion === "liga" ? (
-                                        <TablaClasificacion clasificacion={clasificacion} />
-                                    ) : tabActual === "partidos" ? (
-                                        <ListaPartidos partidos={partidos} />
-                                    ) : tabActual === "stats" && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                            <TablaEstadisticas
-                                                titulo="Máximos goleadores"
-                                                columnas={['Jugador', 'Goles', 'Pen']}
-                                                datos={statsData.goleadores}
-                                            />
-                                            <TablaEstadisticas
-                                                titulo="Más penaltis marcados"
-                                                columnas={['Jugador', 'Goles']}
-                                                datos={statsData.goleadores_penalti}
-                                            />
-                                            <TablaEstadisticas
-                                                titulo="Más partidos jugados"
-                                                columnas={['Jugador', 'PJ']}
-                                                datos={statsData.presencias}
-                                            />
-                                            <TablaEstadisticas
-                                                titulo="Disciplina"
-                                                columnas={[
-                                                    'Jugador',
-                                                    { label: 'Amarillas', icono: <FootballCard width={24} height={24} fillcard={'yellow'} /> },
-                                                    { label: 'Rojas', icono: <FootballCard width={24} height={24} fillcard={'red'} /> }
-                                                ]}
-                                                datos={statsData.disciplina}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="flex items-center gap-sm bg-surface border border-outline-variant p-xs rounded-xl shadow-sm min-w-0 md:w-96 focus-within:ring-2 focus-within:ring-primary">
+                                <BsFilter className="ml-sm text-gray-400 shrink-0" aria-hidden="true" />
+                                <select
+                                    id="competicion-select"
+                                    aria-label="Seleccionar competición"
+                                    value={compSeleccionada ?? ""}
+                                    onChange={(e) => setCompElegida(Number(e.target.value))}
+                                    className="bg-transparent font-bold py-sm pr-lg focus:outline-none cursor-pointer min-w-0 w-full truncate"
+                                >
+                                    {competicionesTemp.map((comp) => (
+                                        <option key={comp?.id} value={comp?.id}>{comp?.competicion_rel?.nombre}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
-                    )
-                })()
-            )
+                    </div>
+
+                    {/* TABS DE NAVEGACIÓN */}
+                    <div className="overflow-x-auto">
+                        <div className="flex gap-sm p-xs bg-surface-variant/20 rounded-2xl w-fit min-w-max">
+                            {tipoCompeticion === "liga" && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTabActual("clasificacion")}
+                                    className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabEfectivo === 'clasificacion' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
+                                >
+                                    <BsTrophy aria-hidden="true" /> Clasificación
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setTabActual("partidos")}
+                                className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabEfectivo === 'partidos' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
+                            >
+                                <BsCalendar3 aria-hidden="true" /> Partidos
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTabActual("stats")}
+                                className={`flex items-center gap-sm px-lg py-sm rounded-xl font-bold transition-all cursor-pointer shrink-0 ${tabEfectivo === 'stats' ? 'bg-white shadow-md text-primary' : 'text-gray-500 hover:bg-white/50'}`}
+                            >
+                                <MdQueryStats aria-hidden="true" /> Estadísticas
+                            </button>
+                        </div>
+                    </div>
+
+                    {loadingDatos ? <Loader />
+                        : errorDatos ? <MensajeError mensaje={errorDatos} />
+                        : <div className="relative min-h-100">
+                            {/* CONTENIDO PRINCIPAL */}
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                {tabEfectivo === "clasificacion" && tipoCompeticion === "liga" ? (
+                                    <TablaClasificacion clasificacion={clasificacion} />
+                                ) : tabEfectivo === "partidos" ? (
+                                    <ListaPartidos partidos={partidos} />
+                                ) : tabEfectivo === "stats" && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <TablaEstadisticas
+                                            titulo="Máximos goleadores"
+                                            columnas={['Jugador', 'Goles', 'Pen']}
+                                            datos={statsData.goleadores}
+                                        />
+                                        <TablaEstadisticas
+                                            titulo="Más penaltis marcados"
+                                            columnas={['Jugador', 'Goles']}
+                                            datos={statsData.goleadores_penalti}
+                                        />
+                                        <TablaEstadisticas
+                                            titulo="Más partidos jugados"
+                                            columnas={['Jugador', 'PJ']}
+                                            datos={statsData.presencias}
+                                        />
+                                        <TablaEstadisticas
+                                            titulo="Disciplina"
+                                            columnas={[
+                                                'Jugador',
+                                                { label: 'Amarillas', icono: <FootballCard width={24} height={24} fillcard={'yellow'} /> },
+                                                { label: 'Rojas', icono: <FootballCard width={24} height={24} fillcard={'red'} /> }
+                                            ]}
+                                            datos={statsData.disciplina}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    }
+                </div>
             }
 
         </>
